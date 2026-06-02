@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'main3.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,7 +52,7 @@ class CleanLoginScreen extends StatelessWidget {
             Positioned(
               top:
                   screenHeight *
-                  0.122, // Safely positioned away from screen top edge
+                  0.10, // Safely positioned away from screen top edge
               left: 32,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,12 +67,12 @@ class CleanLoginScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    height: screenHeight * 0.012,
+                    height: screenHeight * 0.03,
                   ), // Proportionate spacing
                   const Text(
-                    'Business Monitoring App',
+                    'house',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 24,
                       fontWeight: FontWeight.w400,
                       color: Colors.white, // White text over the dark band
                     ),
@@ -87,7 +86,7 @@ class CleanLoginScreen extends StatelessWidget {
               right: 32,
               top:
                   screenHeight *
-                  0.11, // Aligns horizontally across the color boundary split
+                  0.09, // Aligns horizontally across the color boundary split
               child: Container(
                 width: 110,
                 height: 110,
@@ -121,7 +120,7 @@ class CleanLoginScreen extends StatelessWidget {
             Positioned(
               top:
                   screenHeight *
-                  0.3, // Starts right where the dark background needs to transition
+                  0.36, // Starts right where the dark background needs to transition
               left: 0,
               right: 0,
               bottom:
@@ -157,7 +156,10 @@ class CleanLoginScreen extends StatelessWidget {
                       const SizedBox(height: 32),
 
                       // Email Field Input
-                      _buildInputField(label: "M2 ID", hint: "M2 ID"),
+                      _buildInputField(
+                        label: "Email",
+                        hint: "user@perodua.com.my",
+                      ),
                       const SizedBox(height: 20),
 
                       // Password Field Input
@@ -169,7 +171,7 @@ class CleanLoginScreen extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // Navigation Text Options
-                      /*Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           TextButton(
@@ -195,8 +197,8 @@ class CleanLoginScreen extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),*/
-                      const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 40),
 
                       // Execution Sign In Button
                       Center(
@@ -204,15 +206,7 @@ class CleanLoginScreen extends StatelessWidget {
                           width: 180,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // ADD THIS ROUTING ROUTINE:
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(),
-                                ),
-                              );
-                            },
+                            onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2A2A2A),
                               foregroundColor: Colors.white,

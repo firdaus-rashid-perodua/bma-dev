@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-//import 'main2.dart';
+import 'main2.dart';
 import 'detailPage.dart';
 
 void main() {
@@ -47,8 +47,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     // Navigate to detail page
     Navigator.push(
       context,
-      //MaterialPageRoute(builder: (context) => HomePage()),
-      MaterialPageRoute(builder: (context) => DetailPage(title: cardName)),
+      MaterialPageRoute(builder: (context) => HomePage()),
+      //MaterialPageRoute(builder: (context) => DetailPage(title: cardName)),
     );
   }
 
