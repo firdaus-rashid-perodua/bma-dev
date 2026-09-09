@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:test_1/model/services/Api.dart';
 import 'package:test_1/model/testRegionModel.dart';
+
 // import 'package:oracledb/oracledb.dart';
 // import 'detailList.dart';
 
@@ -51,7 +52,7 @@ class DashboardData extends ChangeNotifier {
       //onTap: () { Navigator.pushNamed(context, '/registrationpage_test');}, //error context undefined
     ),
     RegionModel(
-      title: 'REGION 3',
+      title: 'East Malaysia',
       percentage: '0%',
       color: Colors.green,
       actual: 'N/A',
@@ -500,7 +501,7 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                         child: Text(
                           'REGISTRATION',
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -508,7 +509,7 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                       Text(
                         'ACTUAL REGISTRATION',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: Colors.grey,
                           fontWeight: FontWeight.w500,
                         ),
@@ -522,7 +523,7 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                               // '82,198',
                               regActual,
                               style: TextStyle(
-                                fontSize: 42,
+                                fontSize: 38,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -552,7 +553,7 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                                   const Text(
                                     '102.9%',
                                     style: TextStyle(
-                                      fontSize: 20,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
                                     ),
@@ -711,8 +712,8 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.05,
-                  // childAspectRatio: 0.85,
+                  // childAspectRatio: 1.05,
+                  childAspectRatio: 0.85,
                   children: [
                     //...data.map<Widget>((item) => _buildTestRegionCard(item)).toList(),
                     ...data.map<Widget>((item) {
@@ -1067,7 +1068,8 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                   item.title ?? '',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    // fontSize: 15,
+                    fontSize: 14,
                   ),
                 ),
               ),

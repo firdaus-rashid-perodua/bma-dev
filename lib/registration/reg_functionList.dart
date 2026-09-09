@@ -67,8 +67,20 @@ class _DetailPageState extends State<DetailPage> {
         }
 
         // 2. Show a single global loading indicator while fetching
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        /*if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }*/
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            // color: Colors.white, // Sets the background color to white
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Colors
+                    .amber, // Optional: Changes spinner color so it's visible on white
+              ),
+            ),
+          );
         }
 
         // 3. Fallback default values if the APIs fail or are loading
@@ -364,7 +376,8 @@ class _DetailPageState extends State<DetailPage> {
                         Text(
                           title,
                           style: const TextStyle(
-                            fontSize: 18,
+                            // fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -385,8 +398,10 @@ class _DetailPageState extends State<DetailPage> {
               const SizedBox(width: 20),
               // Percentage Circle
               Container(
-                width: 130,
-                height: 130,
+                // width: 130,
+                // height: 130,
+                width: 110,
+                height: 110,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: circleColor, width: 10),

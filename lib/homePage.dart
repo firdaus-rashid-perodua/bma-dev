@@ -341,10 +341,10 @@ class _HomePageState extends State<HomePage> {
                       // Header
                       Row(
                         children: [
-                          const CircleAvatar(
+                          /*const CircleAvatar(
                             radius: 28,
                             backgroundColor: Colors.grey,
-                          ),
+                          ),*/
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -382,7 +382,8 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      // const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       // Main Registration Card 2
                       Container(
                         // padding: const EdgeInsets.all(10),
@@ -428,7 +429,7 @@ class _HomePageState extends State<HomePage> {
                                 'REGISTRATION',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 24,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -445,7 +446,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                       'ACTUAL REGISTRATION',
                                       style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 12,
                                         // color: Colors.grey,
                                         color: Colors.white,
                                         fontWeight: FontWeight.w500,
@@ -455,7 +456,7 @@ class _HomePageState extends State<HomePage> {
                                       // '82,198',
                                       regActYearly,
                                       style: TextStyle(
-                                        fontSize: 42,
+                                        fontSize: 38,
                                         fontWeight: FontWeight.bold,
                                         // color: Colors.black,
                                         color: Colors.white,
@@ -467,8 +468,10 @@ class _HomePageState extends State<HomePage> {
                                   alignment: Alignment.center,
                                   children: [
                                     SizedBox(
-                                      width: 90,
-                                      height: 90,
+                                      // width: 90,
+                                      // height: 90,
+                                      width: 80,
+                                      height: 80,
                                       child: CircularProgressIndicator(
                                         value: 0.1,
                                         strokeWidth: 8,
@@ -815,11 +818,15 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, size: 24),
+                  // child: Icon(icon, size: 24),
+                  child: Icon(icon, size: 18),
                 ),
                 //const Spacer(),
                 const SizedBox(width: 10),
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ],
             ),
             //const SizedBox(height: 12),
@@ -835,17 +842,20 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   current,
                   style: const TextStyle(
-                    fontSize: 22,
+                    // fontSize: 22,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Text(
                   ' / ',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  // style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 Text(
                   target,
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  // style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
@@ -857,8 +867,10 @@ class _HomePageState extends State<HomePage> {
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 68,
-                      height: 68,
+                      // width: 68,
+                      // height: 68,
+                      width: 50,
+                      height: 50,
                       child: CircularProgressIndicator(
                         value: percentage / 100,
                         strokeWidth: 8,
@@ -896,7 +908,8 @@ class _HomePageState extends State<HomePage> {
                           style: TextStyle(
                             color: changeColor,
                             fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                            // fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ),
