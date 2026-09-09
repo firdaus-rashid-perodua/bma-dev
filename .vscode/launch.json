@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter (Development - Localhost IP)",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define-from-file",
+                ".env/devLocal.json"
+            ]
+        },
+        {
+            "name": "Flutter (Development - IP)",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define-from-file",
+                ".env/devIP.json"
+            ]
+        },
+        {
+            "name": "Flutter (Development - Domain)",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define-from-file",
+                ".env/devDomain.json"
+            ]
+        },
+        {
+            "name": "Flutter (Production - Domain)",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define-from-file",
+                ".env/prod.json"
+            ]
+        }
+    ]
+}

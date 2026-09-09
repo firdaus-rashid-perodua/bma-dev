@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class RegionModel {
+  final String title;
+  final String percentage;
+  final Color color;
+  final String actual;
+  final String target;
+  final String yoy;
+  final Color yoyColor;
+
+  RegionModel({
+    required this.title,
+    required this.percentage,
+    required this.color,
+    required this.actual,
+    required this.target,
+    required this.yoy,
+    required this.yoyColor,
+  });
+}
+
+class DashboardData extends ChangeNotifier {
+  bool isRegionView = true;
+
+  final List<RegionModel> regionData = [
+    RegionModel(title: 'CENTRAL 1', percentage: '57.3%', color: Colors.green, actual: '1,746', target: '3,046', yoy: '+13.1% MTD', yoyColor: Colors.green),
+    RegionModel(title: 'CENTRAL 2', percentage: '201.2%', color: Colors.green, actual: '2,058', target: '1,023', yoy: '+12.1% MTD', yoyColor: Colors.green),
+    RegionModel(title: 'CENTRAL 3', percentage: '21.5%', color: Colors.orange, actual: '438', target: '2,041', yoy: '+15.7% MTD', yoyColor: Colors.green),
+    RegionModel(title: 'CENTRAL 4', percentage: '24.5%', color: Colors.orange, actual: '325', target: '1,325', yoy: '+58.8% MTD', yoyColor: Colors.green),
+  ];
+
+  final List<RegionModel> modelData = [
+    RegionModel(title: 'ATIVA', percentage: '88.0%', color: Colors.blue, actual: '2,800', target: '3,181', yoy: '+5.0% MTD', yoyColor: Colors.blue),
+    RegionModel(title: 'ARUZ', percentage: '45.2%', color: Colors.orange, actual: '900', target: '1,991', yoy: '+2.1% MTD', yoyColor: Colors.green),
+    RegionModel(title: 'MYVI', percentage: '110.5%', color: Colors.green, actual: '5,500', target: '4,977', yoy: '+10.2% MTD', yoyColor: Colors.green),
+    RegionModel(title: 'TRAZ', percentage: '33.9%', color: Colors.red, actual: '600', target: '1,770', yoy: '-2.0% MTD', yoyColor: Colors.red),
+    RegionModel(title: 'AXIA', percentage: '33.9%', color: Colors.red, actual: '600', target: '1,770', yoy: '-2.0% MTD', yoyColor: Colors.red),
+  ];
+
+  void setView(bool isRegion) {
+    isRegionView = isRegion;
+    notifyListeners();
+  }
+
+  List<RegionModel> get currentData => isRegionView ? regionData : modelData;
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<DashboardData>(
+      create: (context) => DashboardData(),
+      builder: (context, child) => MaterialApp(
+        title: 'Registration Dashboard',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(primarySwatch: Colors.blue, scaffoldBackgroundColor: Colors.grey[50]),
+        home: const RegistrationsScreen(),
+      ),
+    );
+  }
+}
+
+class RegistrationsScreen extends StatelessWidget {
+  const RegistrationsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboard = Provider.of<DashboardData>(context);
+    final data = dashboard.currentData;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Registration', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
+        actions: [IconButton(icon: const Icon(Icons.menu, color: Colors.black), onPressed: () {})],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 8)]),
+              child: Column(children: [
+                const Center(child: Text('REGISTRATION', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                const SizedBox(height: 16),
+                const Row(children: [
+                  Expanded(child: Text('82,198', style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold))),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _buildTab(context, 'Region', Icons.location_on, dashboard.isRegionView, () => dashboard.setView(true)),
+                const SizedBox(width: 12),
+                _buildTab(context, 'Model', Icons.directions_car, !dashboard.isRegionView, () => dashboard.setView(false)),
+              ],
+            ),
+            const SizedBox(height: 24),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.85,
+              children: data.map<Widget>((item) => _buildRegionCard(item)).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab(BuildContext context, String title, IconData icon, bool isActive, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(color: isActive ? Colors.blue : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? Colors.blue : Colors.grey.shade300)),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: isActive ? Colors.white : Colors.grey, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: TextStyle(color: isActive ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegionCard(RegionModel item) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 6)]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [const Icon(Icons.business, color: Colors.blue, size: 22), const SizedBox(width: 8), Expanded(child: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)))]),
+          const SizedBox(height: 12),
+          Text(item.percentage, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: item.color)),
+          ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: double.parse(item.percentage.replaceAll('%', '')) / 100, minHeight: 6, backgroundColor: Colors.grey[200], valueColor: AlwaysStoppedAnimation<Color>(item.color))),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Actual', style: TextStyle(fontSize: 12, color: Colors.grey)), Text(item.actual, style: const TextStyle(fontWeight: FontWeight.bold))]),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [const Text('Target', style: TextStyle(fontSize: 12, color: Colors.grey)), Text(item.target, style: const TextStyle(fontWeight: FontWeight.bold))]),
+          ]),
+        ],
+      ),
+    );
+  }
+}
