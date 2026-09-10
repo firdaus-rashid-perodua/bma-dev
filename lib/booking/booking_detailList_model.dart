@@ -5,17 +5,17 @@ import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
 
-class DetailListModel extends StatefulWidget {
+class DetailListModelBkg extends StatefulWidget {
   //final String title;
 
-  //const DetailListModel({super.key, required this.title});
-  const DetailListModel({super.key});
+  //const DetailListModelBkg({super.key, required this.title});
+  const DetailListModelBkg({super.key});
 
   @override
-  State<DetailListModel> createState() => _DetailListModelState();
+  State<DetailListModelBkg> createState() => _DetailListModelBkgState();
 }
 
-class _DetailListModelState extends State<DetailListModel> {
+class _DetailListModelBkgState extends State<DetailListModelBkg> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
 
@@ -175,7 +175,7 @@ class _DetailListModelState extends State<DetailListModel> {
             backgroundColor: Colors.white,
             elevation: 0,
             title: const Text(
-              'Registration',
+              'Booking',
               style: TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
@@ -183,11 +183,113 @@ class _DetailListModelState extends State<DetailListModel> {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black),
-                onPressed: () {},
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    // Programmatically opens the drawer from the right
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
               ),
             ],
+          ),
+          endDrawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    // color: Colors.blue
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color.fromARGB(255, 37, 99, 243), // Your color
+                        const Color.fromARGB(
+                          255,
+                          5,
+                          14,
+                          144,
+                        ), // Deep indigo-purple
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Separates title from logout button
+                    children: [
+                      Text(
+                        'PRIME GO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Logout button aligned inside the header
+                      InkWell(
+                        onTap: () {
+                          // Navigator.pop(context); // Closes the drawer
+                          // print("Logged out from drawer header");
+                          Navigator.pushNamed(context, '/loginscreenTest');
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                color: const Color.fromARGB(255, 243, 84, 21),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 243, 84, 21),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: const Text('Registration'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Booking'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+              ],
+            ),
           ),
           body: Column(
             children: [
@@ -291,7 +393,7 @@ class _DetailListModelState extends State<DetailListModel> {
                     vertical: 8,
                   ),
                   children: [
-                    /* IntrinsicHeight(
+                    IntrinsicHeight(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -338,7 +440,7 @@ class _DetailListModelState extends State<DetailListModel> {
                           ),
                         ],
                       ),
-                    ), */
+                    ),
                     const SizedBox(height: 8),
                     /*...outletModelList.map((carModel) {
                       return _buildDealerItem(model: carModel);
@@ -627,7 +729,7 @@ class _DetailListModelState extends State<DetailListModel> {
       onTap: () {
         Navigator.pushNamed(
           context,
-          '/detaillistVariant',
+          '/bkgdetaillistVariant',
           arguments:
               model, // Sends all fields (name, actual, target, etc.) together
         );

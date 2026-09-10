@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:test_1/model/services/Api.dart';
 import 'package:test_1/model/testRegionModel.dart';
+
 // import 'package:oracledb/oracledb.dart';
 // import 'detailList.dart';
 
@@ -345,8 +346,20 @@ class BookingScreenState extends State<BookingScreen> {
         }
 
         // 2. Show a single global loading indicator while fetching
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        /*if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }*/
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            // color: Colors.white, // Sets the background color to white
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Colors
+                    .amber, // Optional: Changes spinner color so it's visible on white
+              ),
+            ),
+          );
         }
 
         // Real start
@@ -470,11 +483,113 @@ class BookingScreenState extends State<BookingScreen> {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black),
-                onPressed: () {},
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    // Programmatically opens the drawer from the right
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
               ),
             ],
+          ),
+          endDrawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    // color: Colors.blue
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color.fromARGB(255, 37, 99, 243), // Your color
+                        const Color.fromARGB(
+                          255,
+                          5,
+                          14,
+                          144,
+                        ), // Deep indigo-purple
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Separates title from logout button
+                    children: [
+                      Text(
+                        'PRIME GO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Logout button aligned inside the header
+                      InkWell(
+                        onTap: () {
+                          // Navigator.pop(context); // Closes the drawer
+                          // print("Logged out from drawer header");
+                          Navigator.pushNamed(context, '/loginscreenTest');
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                color: const Color.fromARGB(255, 243, 84, 21),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 243, 84, 21),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: const Text('Registration'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Booking'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+              ],
+            ),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -714,8 +829,8 @@ class BookingScreenState extends State<BookingScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.05,
-                  // childAspectRatio: 0.85,
+                  // childAspectRatio: 1.05,
+                  childAspectRatio: 0.85,
                   children: [
                     //...data.map<Widget>((item) => _buildTestRegionCard(item)).toList(),
                     ...data.map<Widget>((item) {
@@ -738,13 +853,13 @@ class BookingScreenState extends State<BookingScreen> {
                           } else if (item.routeType == 'MODEL') {
                             Navigator.pushNamed(
                               context,
-                              '/detaillistModel',
+                              '/bkgdetaillistModel',
                               arguments: routeArgs,
                             );
                           } else {
                             Navigator.pushNamed(
                               context,
-                              '/detaillist',
+                              '/bkgdetaillist',
                               arguments: routeArgs,
                             );
                           }
@@ -1070,7 +1185,7 @@ class BookingScreenState extends State<BookingScreen> {
                   item.title ?? '',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 14,
                   ),
                 ),
               ),

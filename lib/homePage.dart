@@ -34,6 +34,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     return FutureBuilder<List<dynamic>>(
       // Fire all your API requests at the same time in parallel
       future: _apiRequestsFuture,
@@ -64,8 +66,20 @@ class _HomePageState extends State<HomePage> {
         }
 
         // 2. Show a single global loading indicator while fetching
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        /*if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }*/
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            // color: Colors.white, // Sets the background color to white
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Colors
+                    .amber, // Optional: Changes spinner color so it's visible on white
+              ),
+            ),
+          );
         }
 
         // 3. Fallback default values if the APIs fail or are loading
@@ -330,6 +344,149 @@ class _HomePageState extends State<HomePage> {
         }
 
         return Scaffold(
+          key: _scaffoldKey, // <-- 1. Assign the key to your Scaffold her
+          endDrawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    // color: Colors.blue
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color.fromARGB(255, 37, 99, 243), // Your color
+                        const Color.fromARGB(
+                          255,
+                          5,
+                          14,
+                          144,
+                        ), // Deep indigo-purple
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Separates title from logout button
+                    children: [
+                      Text(
+                        'PRIME GO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Logout button aligned inside the header
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context); // Closes the drawer
+                          print("Logged out from drawer header");
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                color: const Color.fromARGB(255, 243, 84, 21),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 243, 84, 21),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: const Text('Registration'),
+                  onTap: () {
+                    print("Registration module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/detailpage2',
+                      arguments: {
+                        'title': 'Registration',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Booking'),
+                  onTap: () {
+                    print("Booking module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/bkgfunctionList',
+                      arguments: {
+                        'title': 'Booking',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
+                  },
+                ),
+                /*ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.red),
+                  title: const Text(
+                    'Logout (Inline)',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Logged out from inline button");
+                  },
+                ),*/
+                /*const Divider(height: 1), // Optional line separation
+                SafeArea(
+                  top:
+                      false, // Prevents bottom screen notch issues on modern devices
+                  child: ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // Closes the drawer
+                      print("Logged out from drawer bottom");
+                    },
+                  ),
+                ),*/
+              ],
+            ),
+          ),
           body: SafeArea(
             child: Builder(
               builder: (BuildContext localContext) {
@@ -370,14 +527,8 @@ class _HomePageState extends State<HomePage> {
                           IconButton(
                             icon: const Icon(Icons.menu, size: 28),
                             onPressed: () {
-                              /*Navigator.push(
-                                context,
-                                //MaterialPageRoute(builder: (context) => HomePage()),
-                                MaterialPageRoute(
-                                  builder: (context) => CleanLoginScreen(),
-                                ),
-                              );*/
-                              Navigator.pushNamed(context, '/loginscreen');
+                              // This opens the right-side drawer using the key
+                              _scaffoldKey.currentState?.openEndDrawer();
                             },
                           ),
                         ],
@@ -815,7 +966,11 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    // color: Colors.grey[100],
+                    // color: Colors.tealAccent[100],
+                    color: (title == 'Registration' || title == 'Booking')
+                        ? Colors.tealAccent[100]
+                        : Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   // child: Icon(icon, size: 24),

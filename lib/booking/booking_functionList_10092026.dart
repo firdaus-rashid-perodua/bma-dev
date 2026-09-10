@@ -21,30 +21,11 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
   @override
   void initState() {
     super.initState();
-    _loadData(); // 1 reload
-    /*_apiRequestsFuture = Future.wait([
-      Api().get_actMntBkg(), // Index 0
-      Api().get_tgtMntBkg(), // Index 1
-      Api().get_currDate(), // Index 2
-    ]);*/
-  }
-
-  //2 reload
-  void _loadData() {
     _apiRequestsFuture = Future.wait([
       Api().get_actMntBkg(), // Index 0
       Api().get_tgtMntBkg(), // Index 1
       Api().get_currDate(), // Index 2
     ]);
-  }
-
-  //3 reload
-  Future<void> _handleRefresh() async {
-    setState(() {
-      _loadData(); // Triggers a reload of your data blueprints
-    });
-    // Waits for the new future bundle to finish completing before hiding the spinner
-    await _apiRequestsFuture;
   }
 
   Widget build(BuildContext context) {
@@ -63,36 +44,23 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
       builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
-            body: RefreshIndicator(
-              onRefresh: _handleRefresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(
-                    context,
-                  ).size.height, // Forces it to take up the full screen height
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Cannot connect to server',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Unable to connect to backend.',
-                        style: TextStyle(color: Colors.grey[600]),
-                        // textAlign: Center,
-                      ),
-                    ],
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Cannot connect to server',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unable to connect to backend.',
+                    style: TextStyle(color: Colors.grey[600]),
+                    // textAlign: Center,
+                  ),
+                ],
               ),
             ),
           );
@@ -352,93 +320,89 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
               ],
             ),
           ),
-          body: RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        // '$displayMonth $displayYear',
-                        '$curr_month_Mmm $curr_year_YYYY',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      // '$displayMonth $displayYear',
+                      '$curr_month_Mmm $curr_year_YYYY',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.access_time, color: Colors.grey),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.access_time, color: Colors.grey),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-                  // Yearly Target
-                  /*_buildTargetCard(
-                    iconColor: const Color(0xFF4CAF50),
-                    title: 'Yearly target',
-                    subtitle: '2026',
-                    actual: '82,198',
-                    target: '360,000',
-                    percentage: '22%',
-                    circleColor: const Color(0xFF9CCC65),
-                    circleTextColor: Colors.black,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        //MaterialPageRoute(builder: (context) => HomePage()),
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              // DetailList(title: '$title - Yearly target'),
-                              RegistrationsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  */
+                // Yearly Target
+                /*_buildTargetCard(
+                  iconColor: const Color(0xFF4CAF50),
+                  title: 'Yearly target',
+                  subtitle: '2026',
+                  actual: '82,198',
+                  target: '360,000',
+                  percentage: '22%',
+                  circleColor: const Color(0xFF9CCC65),
+                  circleTextColor: Colors.black,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      //MaterialPageRoute(builder: (context) => HomePage()),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            // DetailList(title: '$title - Yearly target'),
+                            RegistrationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                */
 
-                  // Monthly Target
-                  _buildTargetCard(
-                    iconColor: const Color(0xFF4CAF50),
-                    title: 'Monthly target',
-                    subtitle: '$curr_month_Mmm $curr_year_YYYY',
-                    actual: bkgActual,
-                    target: bkgTarget,
-                    percentage: '$regPcntge%',
-                    circleColor: reg_color,
-                    circleTextColor: Colors.black,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        //MaterialPageRoute(builder: (context) => HomePage()),
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              // DetailList(title: '$title - Monthly target'),
-                              // RegistrationsScreen(),
-                              BookingAppWrapper(),
-                        ),
-                      );
-                      /*Navigator.pushNamed(
-                                  localContext, // Uses the fresh localContext to trace routes safely
-                                  '/detailpage2',
-                                  arguments: {
-                                    'title': 'Registration',
-                                    'month': 'May',
-                                    'year': '2026',
-                                  },
-                                );
-                              },*/
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                // Monthly Target
+                _buildTargetCard(
+                  iconColor: const Color(0xFF4CAF50),
+                  title: 'Monthly target',
+                  subtitle: '$curr_month_Mmm $curr_year_YYYY',
+                  actual: bkgActual,
+                  target: bkgTarget,
+                  percentage: '$regPcntge%',
+                  circleColor: reg_color,
+                  circleTextColor: Colors.black,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      //MaterialPageRoute(builder: (context) => HomePage()),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            // DetailList(title: '$title - Monthly target'),
+                            // RegistrationsScreen(),
+                            BookingAppWrapper(),
+                      ),
+                    );
+                    /*Navigator.pushNamed(
+                                localContext, // Uses the fresh localContext to trace routes safely
+                                '/detailpage2',
+                                arguments: {
+                                  'title': 'Registration',
+                                  'month': 'May',
+                                  'year': '2026',
+                                },
+                              );
+                            },*/
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
         );

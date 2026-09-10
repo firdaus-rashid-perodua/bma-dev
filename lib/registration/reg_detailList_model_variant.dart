@@ -5,17 +5,17 @@ import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
 
-class DetailListModel extends StatefulWidget {
+class DetailListVariant extends StatefulWidget {
   //final String title;
 
-  //const DetailListModel({super.key, required this.title});
-  const DetailListModel({super.key});
+  //const DetailListVariant({super.key, required this.title});
+  const DetailListVariant({super.key});
 
   @override
-  State<DetailListModel> createState() => _DetailListModelState();
+  State<DetailListVariant> createState() => _DetailListVariantState();
 }
 
-class _DetailListModelState extends State<DetailListModel> {
+class _DetailListVariantState extends State<DetailListVariant> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
 
@@ -76,7 +76,7 @@ class _DetailListModelState extends State<DetailListModel> {
       DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
-        name: 'QV-E',
+        name: 'AXIA - 1000H (CVT)',
         actual: 452,
         target: 367,
         percentage: 123,
@@ -87,7 +87,7 @@ class _DetailListModelState extends State<DetailListModel> {
       DealerItemModel(
         rank: 2,
         medalColor: Colors.grey,
-        name: 'AXIA',
+        name: 'AXIA - 1000AV (CVT)',
         actual: 380,
         target: 367,
         percentage: 104,
@@ -183,11 +183,113 @@ class _DetailListModelState extends State<DetailListModel> {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black),
-                onPressed: () {},
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    // Programmatically opens the drawer from the right
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
               ),
             ],
+          ),
+          endDrawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    // color: Colors.blue
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color.fromARGB(255, 37, 99, 243), // Your color
+                        const Color.fromARGB(
+                          255,
+                          5,
+                          14,
+                          144,
+                        ), // Deep indigo-purple
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Separates title from logout button
+                    children: [
+                      Text(
+                        'PRIME GO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Logout button aligned inside the header
+                      InkWell(
+                        onTap: () {
+                          // Navigator.pop(context); // Closes the drawer
+                          // print("Logged out from drawer header");
+                          Navigator.pushNamed(context, '/loginscreenTest');
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                color: const Color.fromARGB(255, 243, 84, 21),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 243, 84, 21),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: const Text('Registration'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Booking'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Settings clicked");
+                  },
+                ),
+              ],
+            ),
           ),
           body: Column(
             children: [
@@ -624,14 +726,7 @@ class _DetailListModelState extends State<DetailListModel> {
         : 0.0;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/detaillistVariant',
-          arguments:
-              model, // Sends all fields (name, actual, target, etc.) together
-        );
-      },
+      onTap: () {},
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
@@ -717,11 +812,11 @@ class _DetailListModelState extends State<DetailListModel> {
                 children: [
                   Text(
                     '$actual Actual',
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
                   ),
                   Text(
                     '$target Target',
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
@@ -746,9 +841,10 @@ class _DetailListModelState extends State<DetailListModel> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  status,
+                  status.replaceAll(' ', '\n'),
+                  textAlign: TextAlign.center, //
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 8,
                     color: statusColor,
                     fontWeight: FontWeight.w500,
                   ),

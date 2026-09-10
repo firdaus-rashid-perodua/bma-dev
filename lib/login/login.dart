@@ -196,8 +196,8 @@ class CleanLoginScreen extends StatelessWidget {
                                   builder: (context) => const HomePage(),
                                 ),
                               ); */
-                              // Navigator.pushNamed(context, '/homepage');
-                              Navigator.pushNamed(context, '/loginscreenTest');
+                              Navigator.pushNamed(context, '/homepage');
+                              // Navigator.pushNamed(context, '/loginscreenTest');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2A2A2A),
