@@ -165,8 +165,8 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
+                  //const SizedBox(height: 8),
+                  /*Text(
                     'Prime Go',
                     style: GoogleFonts.poppins(
                       fontSize: 55,
@@ -174,16 +174,21 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                       color: const Color(0xFF0066B3),
                       height: 1.1,
                     ),
-                  ),
-                  /* Transform.translate(
-                    offset: const Offset(70, -38),
-                    child: const Icon(
-                      Icons.arrow_outward_rounded,
-                      size: 28,
-                      color: Color(0xFF00AEEF),
+                  ),*/
+                  Image.asset(
+                    'assets/primego_trend_words.png',
+                    height: 120,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Text(
+                      'PERODUA',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0066B3),
+                      ),
                     ),
-                  ), */
-                  const SizedBox(height: 15),
+                  ),
+                  /*const SizedBox(height: 15),
                   Text(
                     'OUTLET MONITORIZATION',
                     style: GoogleFonts.poppins(
@@ -202,8 +207,8 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                       color: Colors.grey.shade600,
                       height: 1.4,
                     ),
-                  ),
-                  const SizedBox(height: 60),
+                  ),*/
+                  const SizedBox(height: 30),
                   Center(
                     child: Container(
                       // width: double.infinity,
