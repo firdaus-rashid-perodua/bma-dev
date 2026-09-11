@@ -198,10 +198,6 @@ class _DetailPageState extends State<DetailPage> {
           appBar: AppBar(
             backgroundColor: Colors.white,
             elevation: 0,
-            /*leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {},
-            ),*/
             title: Text(
               displayTitle,
               //'$title',
@@ -212,11 +208,158 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black),
-                onPressed: () {},
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    // Programmatically opens the drawer from the right
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
               ),
             ],
+          ),
+          endDrawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    // color: Colors.blue
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color.fromARGB(255, 37, 99, 243), // Your color
+                        const Color.fromARGB(
+                          255,
+                          5,
+                          14,
+                          144,
+                        ), // Deep indigo-purple
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Separates title from logout button
+                    children: [
+                      Text(
+                        'PRIME GO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Logout button aligned inside the header
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context); // Closes the drawer
+                          print("Logged out from drawer header");
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                color: const Color.fromARGB(255, 243, 84, 21),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 243, 84, 21),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: const Text('Registration'),
+                  onTap: () {
+                    print("Registration module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/detailpage2',
+                      arguments: {
+                        'title': 'Registration',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Booking'),
+                  onTap: () {
+                    print("Booking module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/bkgfunctionList',
+                      arguments: {
+                        'title': 'Booking',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
+                  },
+                ),
+                /*ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.red),
+                  title: const Text(
+                    'Logout (Inline)',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print("Logged out from inline button");
+                  },
+                ),*/
+                /*const Divider(height: 1), // Optional line separation
+                SafeArea(
+                  top:
+                      false, // Prevents bottom screen notch issues on modern devices
+                  child: ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // Closes the drawer
+                      print("Logged out from drawer bottom");
+                    },
+                  ),
+                ),*/
+              ],
+            ),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -409,8 +552,9 @@ class _DetailPageState extends State<DetailPage> {
                 child: Center(
                   child: Text(
                     percentage,
+                    // '123%',
                     style: TextStyle(
-                      fontSize: 40,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
                       color: circleTextColor,
                     ),
