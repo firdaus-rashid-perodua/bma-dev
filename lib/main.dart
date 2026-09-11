@@ -27,8 +27,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       //home: CleanLoginScreen(),
-      initialRoute: '/loginscreen',
-      // initialRoute: '/loginscreenTest',
+      // initialRoute: '/loginscreen',
+      initialRoute: '/loginscreenTest',
       routes: {
         '/loginscreen': (context) => const CleanLoginScreen(),
         '/loginscreenTest': (context) => const PeroduaLoginPage(),
