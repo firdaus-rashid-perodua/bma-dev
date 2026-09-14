@@ -6,6 +6,7 @@ import 'package:marquee/marquee.dart';
 import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
+import 'package:test_1/utils/filter_utils.dart';
 
 class DetailListRegion extends StatefulWidget {
   //final String title;
@@ -20,6 +21,8 @@ class _DetailListRegionState extends State<DetailListRegion> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
   String regionCode = 'Region Code'; // Store at class level to access anywhere
+  //Point your chip text shortcuts directly to your new utility helper:
+  String get displayRegionName => FilterUtils.getDisplayRegionName(regionCode);
 
   // Helper getter to format month from global state
   String get curr_month_Mmm {
@@ -37,7 +40,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
     if (!_isInitialized) {
       final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, String?>;
-      regionCode = args['region_code'] ?? 'Region Code';
+      regionCode = args['region_code'] ?? 'Region Code 2';
 
       _fetchRegionData(); // Fetch initially
       _isInitialized = true;
@@ -156,21 +159,6 @@ class _DetailListRegionState extends State<DetailListRegion> {
         );
       },
     );
-  }
-
-  String get displayRegionName {
-    switch (regionCode.toUpperCase()) {
-      case 'C1':
-        return 'Central 1';
-      case 'N':
-        return 'North';
-      case 'S':
-        return 'South';
-      case 'W':
-        return 'West';
-      default:
-        return regionCode; // Fallback to raw string value if unrecognized
-    }
   }
 
   Future<void> _selectRegion(BuildContext context) async {
