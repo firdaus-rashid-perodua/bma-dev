@@ -16,17 +16,150 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
+  // 1. Move your state variables to the top so they are globally accessible in this class
+  // String curr_month_MM = DateFormat('MM').format(DateTime.now());
+  // String curr_month_Mmm = DateFormat('MMM').format(DateTime.now());
+  // String curr_year_YYYY = DateFormat('yyyy').format(DateTime.now());
+  String get curr_month_Mmm {
+    int monthNumber = int.tryParse(Api.currMonth) ?? 1;
+    int yearNumber = int.tryParse(Api.currYear) ?? 2025;
+    return DateFormat('MMM').format(DateTime(yearNumber, monthNumber));
+  }
+
   late Future<List<dynamic>> _apiRequestsFuture;
 
   @override
   void initState() {
     super.initState();
+    // _apiRequestsFuture = Future.wait([
+    //   Api().get_actMntReg(), // Index 0
+    //   Api().get_tgtMntReg(), // Index 1
+    //   Api().get_currDate(), // Index 2
+    // ]);
+    _fetchData();
+  }
+
+  // Helper method to fetch/refresh API data when the month or year changes
+  void _fetchData() {
     _apiRequestsFuture = Future.wait([
-      Api().get_actMntReg(), // Index 0
-      Api().get_tgtMntReg(), // Index 1
-      Api().get_currDate(), // Index 2
+      Api().get_actMntReg(),
+      Api().get_tgtMntReg(),
+      Api().get_currDate(),
     ]);
   }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Update the state variables and refresh the futures!
+                setState(() {
+                  // curr_month_MM = selectedMonth.toString().padLeft(2, '0');
+                  // curr_year_YYYY = selectedYear.toString();
+
+                  // DateTime tempMMMDate = DateTime(selectedYear, selectedMonth);
+                  // curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
+
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+
+                  // Re-fetch API data for the newly selected date
+                  _fetchData();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  // ==========================================
 
   Widget build(BuildContext context) {
     // 1. Extract the arguments map safely
@@ -367,20 +500,23 @@ class _DetailPageState extends State<DetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Date Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      // '$displayMonth $displayYear',
-                      '$curr_month_Mmm $curr_year_YYYY',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                InkWell(
+                  onTap: () => _selectMonthYear(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        // '$displayMonth $displayYear',
+                        '$curr_month_Mmm $curr_year_YYYY',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.access_time, color: Colors.grey),
-                  ],
+                      const SizedBox(width: 8),
+                      const Icon(Icons.access_time, color: Colors.grey),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
 

@@ -21,8 +21,10 @@ class Api {
   // DateTime now = DateTime.now();
   // String currMonth = DateFormat('MM').format(DateTime.now());
   // String currYear = DateFormat.y().format(DateTime.now());
-  String currMonth = '07';
-  String currYear = '2025';
+  // String currMonth = '07';
+  // String currYear = '2025';
+  static String currMonth = '07';
+  static String currYear = '2025';
 
   get_currDate() async {
     return {
