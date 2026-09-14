@@ -19,26 +19,221 @@ class DetailListRegion extends StatefulWidget {
 class _DetailListRegionState extends State<DetailListRegion> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
+  String regionCode = 'Region Code'; // Store at class level to access anywhere
+
+  // Helper getter to format month from global state
+  String get curr_month_Mmm {
+    int monthNumber = int.tryParse(Api.currMonth) ?? 1;
+    int yearNumber = int.tryParse(Api.currYear) ?? 2025;
+    return DateFormat('MMM').format(DateTime(yearNumber, monthNumber));
+  }
+
+  String get curr_year_YYYY => Api.currYear;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     if (!_isInitialized) {
-      // 1. Safe to get arguments here
       final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, String?>;
-      final String regionCode = args['region_code'] ?? 'Region Code';
+      regionCode = args['region_code'] ?? 'Region Code';
 
-      // 2. Pass the regionCode into your API function
-      _apiReqFutureRegionList = Future.wait([
-        Api().get_RegionListMntRegOutlets(regionCode), // Index 0
-        Api().get_RegionMntRegOutletSummary(regionCode), // Index 1
-        Api().get_currDate(), // Index 2
-      ]);
-
+      _fetchRegionData(); // Fetch initially
       _isInitialized = true;
     }
+  }
+
+  // Callable method to refresh futures when filter changes
+  void _fetchRegionData() {
+    _apiReqFutureRegionList = Future.wait([
+      Api().get_RegionListMntRegOutlets(
+        regionCode,
+      ), // Will pull using global Api.currMonth/Year
+      Api().get_RegionMntRegOutletSummary(regionCode),
+      Api().get_currDate(),
+    ]);
+  }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+                  _fetchRegionData(); // Triggers API reload with new dates
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String get displayRegionName {
+    switch (regionCode.toUpperCase()) {
+      case 'C1':
+        return 'Central 1';
+      case 'N':
+        return 'North';
+      case 'S':
+        return 'South';
+      case 'W':
+        return 'West';
+      default:
+        return regionCode; // Fallback to raw string value if unrecognized
+    }
+  }
+
+  Future<void> _selectRegion(BuildContext context) async {
+    // Define your region options mapping [Display Name : Backend Code]
+    final Map<String, String> regions = {
+      'Central 1': 'C1',
+      'North': 'N',
+      'South': 'S',
+      'West': 'W',
+    };
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Wrap content height closely
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Select Region',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Divider(),
+              // Generate list of items from your region map keys
+              ...regions.keys.map((String key) {
+                final isSelected = regionCode.toLowerCase() == regions[key];
+                return ListTile(
+                  title: Text(
+                    key,
+                    style: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected ? Theme.of(context).primaryColor : null,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      // Update state to use chosen region backend identifier value
+                      regionCode = regions[key]!;
+
+                      // Instantly trigger an API reload for this newly mapped zone
+                      _fetchRegionData();
+                    });
+                    Navigator.pop(context); // Close bottom menu panel
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -248,39 +443,50 @@ class _DetailListRegionState extends State<DetailListRegion> {
           body: Column(
             children: [
               SizedBox(height: 5),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16),
+              //   child: Row(
+              //     children: [
+              //       Expanded(child: SizedBox(height: 10)),
+              //       const SizedBox(width: 8),
+              //       _buildFilterChip('$region', Icons.location_on),
+              //       const SizedBox(width: 8),
+              //       _buildFilterChip(
+              //         // 'May 2026',
+              //         '$curr_month_Mmm $curr_year_YYYY',
+              //         Icons.table_chart,
+              //       ),
+              //     ],
+              //   ),
+              // ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    /*Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search dealer',
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 0,
-                          ),
-                        ),
-                      ),
-                    ),*/
                     Expanded(child: SizedBox(height: 10)),
                     const SizedBox(width: 8),
-                    _buildFilterChip('$region', Icons.location_on),
+                    // _buildFilterChip('$region', Icons.location_on),
+                    GestureDetector(
+                      onTap: () => _selectRegion(context),
+                      child: _buildFilterChip(
+                        '$regionCode',
+                        Icons.location_on,
+                      ), // Shows selected region text
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(
-                      // 'May 2026',
-                      '$curr_month_Mmm $curr_year_YYYY',
-                      Icons.table_chart,
+
+                    // Make your chip clickable:
+                    GestureDetector(
+                      onTap: () => _selectMonthYear(context),
+                      child: _buildFilterChip(
+                        '$curr_month_Mmm $curr_year_YYYY',
+                        Icons.table_chart,
+                      ),
                     ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

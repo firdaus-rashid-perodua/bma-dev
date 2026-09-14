@@ -136,14 +136,8 @@ class _DetailPageState extends State<DetailPage> {
             ),
             TextButton(
               onPressed: () {
-                // Update the state variables and refresh the futures!
+                // Update the global static state variables!
                 setState(() {
-                  // curr_month_MM = selectedMonth.toString().padLeft(2, '0');
-                  // curr_year_YYYY = selectedYear.toString();
-
-                  // DateTime tempMMMDate = DateTime(selectedYear, selectedMonth);
-                  // curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
-
                   Api.currMonth = selectedMonth.toString().padLeft(2, '0');
                   Api.currYear = selectedYear.toString();
 

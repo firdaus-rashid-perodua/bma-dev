@@ -360,16 +360,23 @@ class Api {
         var data = jsonDecode(res.body);
         //print("ok");
         // print("Api.dart - get_RegionListMntRegOutlets() result : $data");
-        print("Api.dart - get_RegionListMntRegOutlets()");
+        print("Api.dart - get_RegionListMntRegOutlets(" + regionCode + ")");
 
         return data;
       } else {
         var data = jsonDecode(res.body);
-        print("Api.dart - get_RegionListMntRegOutlets() : $data");
+        print(
+          "Api.dart - get_RegionListMntRegOutlets(" + regionCode + ") : $data",
+        );
         return data;
       }
     } catch (e) {
-      debugPrint('Api.dart - get_RegionListMntRegOutlets() : ' + e.toString());
+      debugPrint(
+        'Api.dart - get_RegionListMntRegOutlets(' +
+            regionCode +
+            ') : ' +
+            e.toString(),
+      );
       //return [];
       return {
         "success": false,
