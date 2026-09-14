@@ -10,12 +10,20 @@ class FilterUtils {
     switch (regionCode.toUpperCase()) {
       case 'C1':
         return 'Central 1';
+      case 'C2':
+        return 'Central 2';
+      case 'East Coast 1':
+        return 'Central 1';
+      case 'EC2':
+        return 'East Coast 2';
+      case 'EM':
+        return 'East Malaysia';
       case 'N':
-        return 'North';
+        return 'Northern';
       case 'S':
-        return 'South';
-      case 'W':
-        return 'West';
+        return 'Southern';
+      case 'FMD':
+        return 'FMD';
       default:
         return regionCode;
     }
@@ -136,9 +144,13 @@ class FilterUtils {
   }) async {
     final Map<String, String> regions = {
       'Central 1': 'C1',
-      'North': 'N',
-      'South': 'S',
-      'West': 'W',
+      'Central 2': 'C2',
+      'East Coast 1': 'EC1',
+      'East Coast 2': 'EC2',
+      'East Malaysia': 'EM',
+      'Northern': 'N',
+      'Southern': 'S',
+      'FMD': 'FMD',
     };
 
     await showModalBottomSheet(

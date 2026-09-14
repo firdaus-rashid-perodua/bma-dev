@@ -165,9 +165,13 @@ class _DetailListRegionState extends State<DetailListRegion> {
     // Define your region options mapping [Display Name : Backend Code]
     final Map<String, String> regions = {
       'Central 1': 'C1',
-      'North': 'N',
-      'South': 'S',
-      'West': 'W',
+      'Central 2': 'C2',
+      'East Coast 1': 'EC1',
+      'East Coast 2': 'EC2',
+      'East Malaysia': 'EM',
+      'Northern': 'N',
+      'Southern': 'S',
+      // 'FMD': 'FMD',
     };
 
     await showModalBottomSheet(
@@ -457,7 +461,8 @@ class _DetailListRegionState extends State<DetailListRegion> {
                     GestureDetector(
                       onTap: () => _selectRegion(context),
                       child: _buildFilterChip(
-                        '$regionCode',
+                        // '$regionCode',
+                        '$displayRegionName',
                         Icons.location_on,
                       ), // Shows selected region text
                     ),
