@@ -158,6 +158,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_native_certs:
+    dependency: "direct main"
+    description:
+      name: flutter_native_certs
+      sha256: "1f415eb831515c883df1c2f77d818133d360051386e36cb9464ebbac7c9b7881"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   flutter_svg:
     dependency: "direct main"
     description:

@@ -333,7 +333,7 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                             ),*/
                             // const SizedBox(height: 8),
                             const SizedBox(height: 25),
-                            SizedBox(
+                            /*SizedBox(
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _login,
@@ -356,8 +356,8 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                                         ),
                                       ),
                               ),
-                            ),
-                            /* SizedBox(
+                            ),*/
+                            SizedBox(
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: () {
@@ -382,7 +382,7 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                                         ),
                                       ),
                               ),
-                            ), */
+                            ),
                           ],
                         ),
                       ),

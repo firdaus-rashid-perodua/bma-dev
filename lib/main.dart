@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart'; //  Correct path
-// import 'package:flutter_native_certs/flutter_native_certs.dart';
+import 'package:flutter_native_certs/flutter_native_certs.dart';
 import 'package:test_1/booking/bkg_detailList_region.dart';
 import 'package:test_1/booking/booking_detailList_model.dart';
 import 'package:test_1/booking/booking_detailList_model_variant.dart';
@@ -20,15 +20,15 @@ import 'registration/reg_detailList_model.dart';
 // import 'registration/reg_dashboard_unconnected_stls.dart';
 
 Future<void> main() async {
-  // WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // try {
-  //   await FlutterNativeCerts.instance.initialize();
-  // } on PlatformException catch (e) {
-  //   debugPrint(
-  //     'Failed to initialize FlutterNativeCerts plugin: ${e.toString()}',
-  //   );
-  // }
+  try {
+    await FlutterNativeCerts.instance.initialize();
+  } on PlatformException catch (e) {
+    debugPrint(
+      'Failed to initialize FlutterNativeCerts plugin: ${e.toString()}',
+    );
+  }
 
   initializeGlobalDate();
   runApp(MyApp());
