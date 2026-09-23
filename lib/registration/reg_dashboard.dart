@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/services/Api.dart';
 import 'package:test_1/model/testRegionModel.dart';
 
@@ -151,7 +152,10 @@ class DashboardData extends ChangeNotifier {
     return numValue.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), ',');
   }
 
-  void updateRegionsFromData(List<dynamic> apiDataList) {
+  void updateRegionsFromData(
+    List<dynamic> apiDataList,
+    Map<String, int> ackLookup,
+  ) {
     // 1. Map the JSON rows into your temporary model structure
     final List<RegionModel> newModels = apiDataList.map((row) {
       // Read the new full name key we just created in your SQL query!
@@ -159,10 +163,16 @@ class DashboardData extends ChangeNotifier {
           row['REGION_NAME']?.toString() ??
           row['REGION']?.toString() ??
           'REGION';
-      String freshActual = _formatNumber(row['ACTUAL_REG_COUNT']);
+
+      String region_Code = '${row['REGION'] ?? ''}';
+      final int ackCount = ackLookup[region_Code] ?? 0;
+      final int baseActual = (row['ACTUAL_REG_COUNT'] as num?)?.toInt() ?? 0;
+      final int combinedActual = baseActual + ackCount;
+
+      String freshActual = _formatNumber(combinedActual);
+      // String freshActual = _formatNumber(row['ACTUAL_REG_COUNT']);
       String freshTarget = _formatNumber(row['TARGET_REG_COUNT']);
       String freshPctg = '${row['REG_PCTG_1'] ?? '0.0'}%';
-      String region_Code = '${row['REGION'] ?? ''}';
       Color reg_color = Colors.grey;
 
       if (row['REG_PCTG_1'] > 99.9) {
@@ -206,7 +216,10 @@ class DashboardData extends ChangeNotifier {
     }
   }
 
-  void updateModelFromData(List<dynamic> apiDataList) {
+  void updateModelFromData(
+    List<dynamic> apiDataList,
+    Map<String, int> ackLookupModel,
+  ) {
     // 1. Map the JSON rows into your temporary model structure
     final List<RegionModel> newModels = apiDataList.map((row) {
       // Read the new full name key we just created in your SQL query!
@@ -214,7 +227,18 @@ class DashboardData extends ChangeNotifier {
           row['Model']?.toString() ??
           // row['REGION']?.toString() ??
           'MODEL';
-      String freshActual = _formatNumber(row['ACTUAL_REG_COUNT']);
+
+      String model_name = '${row['Model'] ?? ''}';
+      final int ackCountModel = ackLookupModel[model_name] ?? 0;
+      final int baseActualModel =
+          (row['ACTUAL_REG_COUNT'] as num?)?.toInt() ?? 0;
+      final int combinedActualModel = baseActualModel + ackCountModel;
+      print(model_name);
+      print(ackCountModel);
+      print(baseActualModel);
+
+      // String freshActual = _formatNumber(row['ACTUAL_REG_COUNT']);
+      String freshActual = _formatNumber(combinedActualModel);
       String freshTarget = _formatNumber(row['TARGET_REG_COUNT']);
       String freshPctg = '${row['REG_PCTG_1'] ?? '0.0'}%';
       Color reg_modelColor = Colors.grey;
@@ -291,7 +315,54 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
       Api().get_tgtMntReg(), // Index 1
       Api().get_RegionListMntReg(), // Index 2
       Api().get_RegionListMntRegModel(), // Index 3
+      Api().get_ackReg(), // Index 4
+      Api().get_AckRegistrationRegion(), // Index 5
+      Api().get_AckRegistrationModel(), // Index 5
     ]);
+  }
+
+  Map<String, int> _buildAckLookup(dynamic ackListResponse) {
+    final Map<String, int> lookup = {};
+
+    if (ackListResponse == null || ackListResponse is! Map) return lookup;
+    if (ackListResponse['success'] != true) return lookup;
+
+    final data = ackListResponse['data'];
+    if (data is! List) return lookup;
+
+    for (final row in data) {
+      if (row is Map) {
+        final regionCode = row['REGION_2']?.toString();
+        final totalAck = (row['TOTAL_ACK'] as num?)?.toInt() ?? 0;
+        if (regionCode != null) {
+          lookup[regionCode] = totalAck;
+        }
+      }
+    }
+
+    return lookup;
+  }
+
+  Map<String, int> _buildAckLookupModel(dynamic ackListResponse) {
+    final Map<String, int> lookup = {};
+
+    if (ackListResponse == null || ackListResponse is! Map) return lookup;
+    if (ackListResponse['success'] != true) return lookup;
+
+    final data = ackListResponse['data'];
+    if (data is! List) return lookup;
+
+    for (final row in data) {
+      if (row is Map) {
+        final modelCode = row['MODEL']?.toString();
+        final totalAck = (row['TOTAL_ACK'] as num?)?.toInt() ?? 0;
+        if (modelCode != null) {
+          lookup[modelCode] = totalAck;
+        }
+      }
+    }
+
+    return lookup;
   }
 
   @override
@@ -362,13 +433,17 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
 
         // Real start
         // 3. Fallback default values if the APIs fail or are loading
+        int rawRegACK = 0;
+
         String regActual = '00,000';
         String regTarget = '00,000';
         String remainingTarget = '00,000';
+        String regPctg = '00.0';
         int raw_regActual = 0;
         int raw_regTarget = 0;
         int raw_remainingTarget = 0;
         // double regPcntge = 0.0;
+        double rawRegPctg = 0;
         int regPcntge = 0;
         Color? reg_color = Colors.red;
 
@@ -376,6 +451,14 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
 
         if (snapshot.hasData) {
           final List<dynamic> responses = snapshot.data!;
+
+          if (responses[4]?['success'] == true &&
+              responses[4]['data'].isNotEmpty) {
+            if (globalCurrentMonth == Api.currMonth &&
+                globalCurrentYear == Api.currYear) {
+              rawRegACK = responses[4]['data'][0]['AMOUNT'] ?? 0;
+            }
+          }
 
           if (responses[0]?['success'] == true &&
               responses[0]['data'].isNotEmpty) {
@@ -389,7 +472,8 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
             }
 
             if (dataList.isNotEmpty) {
-              final rawValue = dataList[0]['total_reg_month'];
+              var rawValue = dataList[0]['total_reg_month'];
+              rawValue = rawValue + rawRegACK;
               raw_regActual = rawValue;
               // print(raw_regActual);
               // raw_regActual = responses[0]['data'][0]['total_reg_month'] ?? 0;
@@ -439,18 +523,27 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
 
             // PUSH DATA TO YOUR LIST HERE:
             // dashboard.updateCentral2Actual('111', '222', '11.2');
-            dashboard.updateRegionsFromData(responses[2]['data']);
+            final ackLookup = _buildAckLookup(responses[5]);
+            dashboard.updateRegionsFromData(responses[2]['data'], ackLookup);
           }
 
           if (responses[3]?['success'] == true &&
               responses[3]['data'].isNotEmpty) {
             // PUSH DATA TO YOUR LIST HERE:
-            dashboard.updateModelFromData(responses[3]['data']);
+            final ackLookupModel = _buildAckLookupModel(responses[6]);
+            dashboard.updateModelFromData(responses[3]['data'], ackLookupModel);
           }
         }
 
         if (regActual != '00,000' && regTarget != '00,000') {
           //
+          // raw_regActual = responses[0]['data'][0]['total_reg_year'] ?? 0;
+          // raw_regTarget = responses[1]['data'][0]['TARGET_REG_YEAR'] ?? 0;
+
+          // calculate percentage
+          rawRegPctg = ((raw_regActual * 100) / raw_regTarget).toDouble();
+          regPctg = rawRegPctg.toStringAsFixed(1);
+
           raw_remainingTarget = raw_regTarget - raw_regActual;
           if (raw_remainingTarget < 0) {
             raw_remainingTarget = 0;
@@ -574,48 +667,34 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                   leading: const Icon(Icons.directions_car),
                   title: const Text('Registration'),
                   onTap: () {
-                    Navigator.pop(context);
-                    print("Settings clicked");
+                    print("Registration module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/detailpage2',
+                      arguments: {
+                        'title': 'Registration',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.person),
                   title: const Text('Booking'),
                   onTap: () {
-                    Navigator.pop(context);
-                    print("Settings clicked");
+                    print("Booking module pressed");
+                    Navigator.pushNamed(
+                      context, // Uses the fresh localContext to trace routes safely
+                      '/bkgfunctionList',
+                      arguments: {
+                        'title': 'Booking',
+                        'month': 'May',
+                        'year': '2026',
+                      },
+                    );
                   },
                 ),
-                /*ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'Logout (Inline)',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    print("Logged out from inline button");
-                  },
-                ),*/
-                /*const Divider(height: 1), // Optional line separation
-                SafeArea(
-                  top:
-                      false, // Prevents bottom screen notch issues on modern devices
-                  child: ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context); // Closes the drawer
-                      print("Logged out from drawer bottom");
-                    },
-                  ),
-                ),*/
               ],
             ),
           ),
@@ -683,7 +762,7 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                                 width: 90,
                                 height: 90,
                                 child: CircularProgressIndicator(
-                                  value: 1.029,
+                                  value: rawRegPctg / 100,
                                   strokeWidth: 8,
                                   backgroundColor: Colors.grey[200],
                                   valueColor:
@@ -695,16 +774,16 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                               Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Text(
-                                    '102.9%',
+                                  Text(
+                                    '$regPctg%',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
                                     ),
                                   ),
-                                  const Text(
-                                    'of 30,500',
+                                  Text(
+                                    'of $regTarget',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
@@ -725,8 +804,8 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                             size: 18,
                           ),
                           const SizedBox(width: 4),
-                          const Text(
-                            '102.9% of target achieved',
+                          Text(
+                            '$regPctg% of target achieved',
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.w500,
@@ -739,7 +818,8 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
-                          value: 0.228,
+                          // value: 0.228,
+                          value: rawRegPctg / 100,
                           minHeight: 8,
                           backgroundColor: Colors.grey[200],
                           valueColor: const AlwaysStoppedAnimation<Color>(
@@ -879,11 +959,12 @@ class _RegistrationsScreenState extends State<RegistrationsScreen> {
                               arguments: routeArgs,
                             );
                           } else if (item.routeType == 'MODEL') {
-                            Navigator.pushNamed(
-                              context,
-                              '/detaillistModel',
-                              arguments: routeArgs,
-                            );
+                            // Navigator.pushNamed(
+                            //   context,
+                            //   '/detaillistModel',
+                            //   arguments: routeArgs,
+                            // );
+                            null;
                           } else {
                             Navigator.pushNamed(
                               context,

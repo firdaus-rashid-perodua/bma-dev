@@ -31,7 +31,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
 
       // 2. Pass the regionCode into your API function
       _apiReqFutureRegionList = Future.wait([
-        Api().get_ModelListOfOutlet(outletCode), // Index 0
+        Api().get_BkgModelListOfOutlet(outletCode), // Index 0
         Api().get_MntOutletModelSummary(outletCode), // Index 1
         Api().get_currDate(), // Index 2
       ]);
@@ -262,7 +262,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -287,7 +287,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),

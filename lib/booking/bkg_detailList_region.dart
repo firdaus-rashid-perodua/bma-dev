@@ -6,6 +6,7 @@ import 'package:marquee/marquee.dart';
 import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
+import 'package:test_1/utils/filter_utils.dart';
 
 class DetailListRegionBkg extends StatefulWidget {
   //final String title;
@@ -19,6 +20,8 @@ class DetailListRegionBkg extends StatefulWidget {
 class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
+  String regionCode = 'Region Code';
+  String get displayRegionName => FilterUtils.getDisplayRegionName(regionCode);
 
   @override
   void didChangeDependencies() {
@@ -28,18 +31,192 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
       // 1. Safe to get arguments here
       final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, String?>;
-      final String regionCode = args['region_code'] ?? 'Region Code';
+      regionCode = args['region_code'] ?? 'Region Code 2';
 
       // 2. Pass the regionCode into your API function
-      _apiReqFutureRegionList = Future.wait([
-        // Api().get_RegionListMntRegOutlets(regionCode), // Index 0
-        Api().get_RegionListMntBkgOutlets(regionCode), // Index 0
-        Api().get_RegionMntRegOutletSummary(regionCode), // Index 1
-        Api().get_currDate(), // Index 2
-      ]);
+      _fetchRegionData();
 
       _isInitialized = true;
     }
+  }
+
+  void _fetchRegionData() {
+    _apiReqFutureRegionList = Future.wait([
+      // Api().get_RegionListMntRegOutlets(regionCode), // Index 0
+      Api().get_RegionListMntBkgOutlets(regionCode), // Index 0
+      Api().get_RegionMntRegOutletSummary(regionCode), // Index 1
+      Api().get_currDate(), // Index 2
+    ]);
+  }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+                  _fetchRegionData(); // Triggers API reload with new dates
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _selectRegion(BuildContext context) async {
+    // Define your region options mapping [Display Name : Backend Code]
+    final Map<String, String> regions = {
+      'Central 1': 'C1',
+      'Central 2': 'C2',
+      'East Coast 1': 'EC1',
+      'East Coast 2': 'EC2',
+      'East Malaysia': 'EM',
+      'Northern': 'N',
+      'Southern': 'S',
+      // 'FMD': 'FMD',
+    };
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Wrap content height closely
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Select Region',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Divider(),
+              // Generate list of items from your region map keys
+              ...regions.keys.map((String key) {
+                final isSelected = regionCode.toLowerCase() == regions[key];
+                return ListTile(
+                  title: Text(
+                    key,
+                    style: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected ? Theme.of(context).primaryColor : null,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      // Update state to use chosen region backend identifier value
+                      regionCode = regions[key]!;
+
+                      // Instantly trigger an API reload for this newly mapped zone
+                      _fetchRegionData();
+                    });
+                    Navigator.pop(context); // Close bottom menu panel
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -186,6 +363,28 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
               final bool isAboveTarget =
                   (actualCount ?? 0) >= (targetCount ?? 0);
 
+              final bkgPercentage = (item['BKG_PCTG'] as num?)?.toDouble();
+              Color bkg_color = Colors.grey;
+
+              if (bkgPercentage != null) {
+                if (bkgPercentage > 99.9) {
+                  bkg_color = Colors.green;
+                } else if (bkgPercentage > 69.9) {
+                  // 💡 Added variable name back in
+                  bkg_color = Colors.blue;
+                } else if (bkgPercentage > 49.9) {
+                  bkg_color = const Color(
+                    0xFFE6A100,
+                  ); // Added 'const' for performance optimization
+                } else if (bkgPercentage > 24.9) {
+                  bkg_color = Colors.orange;
+                } else {
+                  bkg_color = Colors.red;
+                }
+              } else {
+                bkg_color = Colors.grey;
+              }
+
               parsedItems.add(
                 DealerItemModel(
                   rank: currentRank,
@@ -195,7 +394,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                   target: targetCount,
                   percentage: (item['BKG_PCTG'] as num?)?.toInt(),
                   status: isAboveTarget ? 'Above Target' : 'Below Target',
-                  statusColor: isAboveTarget ? Colors.green : Colors.red,
+                  statusColor: bkg_color,
                   isGold: currentRank == 1, // Marks rank #1 as Gold
                   medalColor: currentRank == 1
                       ? Colors.amber
@@ -319,7 +518,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -344,7 +543,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),
@@ -374,12 +573,27 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                     ),*/
                     Expanded(child: SizedBox(height: 10)),
                     const SizedBox(width: 8),
-                    _buildFilterChip('$region', Icons.location_on),
+                    // _buildFilterChip('$region', Icons.location_on),
+                    GestureDetector(
+                      onTap: () => _selectRegion(context),
+                      child: _buildFilterChip(
+                        // '$regionCode',
+                        '$displayRegionName',
+                        Icons.location_on,
+                      ), // Shows selected region text
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(
-                      // 'May 2026',
-                      '$curr_month_Mmm $curr_year_YYYY',
-                      Icons.table_chart,
+                    // _buildFilterChip(
+                    //   // 'May 2026',
+                    //   '$curr_month_Mmm $curr_year_YYYY',
+                    //   Icons.table_chart,
+                    // ),
+                    GestureDetector(
+                      onTap: () => _selectMonthYear(context),
+                      child: _buildFilterChip(
+                        '$curr_month_Mmm $curr_year_YYYY',
+                        Icons.table_chart,
+                      ),
                     ),
                   ],
                 ),
@@ -452,7 +666,8 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                               icon: Icons.trending_up,
                               color: Colors.green,
                               title: 'Average Achievement',
-                              value: '$average_achievement_pctg%',
+                              // value: '$average_achievement_pctg%',
+                              value: 'N/A',
                             ),
                           ),
                           /* const SizedBox(width: 8),
@@ -472,7 +687,8 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                               icon: Icons.warning_amber_rounded,
                               color: Colors.red,
                               title: 'Red Area',
-                              value: '$red_zone_area_outlets',
+                              // value: '$red_zone_area_outlets',
+                              value: '-',
                               subtitle: 'Dealers',
                             ),
                           ),
@@ -670,13 +886,13 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
     return GestureDetector(
       //onTap: model.onTap,
       onTap: () {
-        //
-        Navigator.pushNamed(
-          context,
-          '/bkgdetaillistModel',
-          arguments:
-              model, // Sends all fields (name, actual, target, etc.) together
-        );
+        null;
+        // Navigator.pushNamed(
+        //   context,
+        //   '/bkgdetaillistModel',
+        //   arguments:
+        //       model, // Sends all fields (name, actual, target, etc.) together
+        // );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:marquee/marquee.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
@@ -50,12 +51,33 @@ class _DetailListRegionState extends State<DetailListRegion> {
   // Callable method to refresh futures when filter changes
   void _fetchRegionData() {
     _apiReqFutureRegionList = Future.wait([
-      Api().get_RegionListMntRegOutlets(
-        regionCode,
-      ), // Will pull using global Api.currMonth/Year
+      Api().get_RegionListMntRegOutlets(regionCode),
       Api().get_RegionMntRegOutletSummary(regionCode),
       Api().get_currDate(),
+      Api().get_AckRegistrationOutletList(),
     ]);
+  }
+
+  Map<String, int> _buildAckLookup(dynamic ackListResponse) {
+    final Map<String, int> lookup = {};
+
+    if (ackListResponse == null || ackListResponse is! Map) return lookup;
+    if (ackListResponse['success'] != true) return lookup;
+
+    final data = ackListResponse['data'];
+    if (data is! List) return lookup;
+
+    for (final row in data) {
+      if (row is Map) {
+        final outletCode = row['OUTLET_CODE']?.toString();
+        final totalAck = (row['TOTAL_ACK'] as num?)?.toInt() ?? 0;
+        if (outletCode != null) {
+          lookup[outletCode] = totalAck;
+        }
+      }
+    }
+
+    return lookup;
   }
 
   Future<void> _selectMonthYear(BuildContext context) async {
@@ -324,90 +346,130 @@ class _DetailListRegionState extends State<DetailListRegion> {
         String curr_month_Mmm = 'Jan';
         String curr_year_YYYY = '1999';
 
-        // 1. If the API is still downloading data, keep displaying your initial mock data
         if (snapshot.hasData) {
-          final List<dynamic> responses = snapshot.data!;
+          final List<dynamic> responses = snapshot.data as List<dynamic>;
 
-          if (responses.isNotEmpty && responses[2]?['success'] == true) {
-            //
-            var dataField = responses[2]['data'];
-            List<dynamic> dataList = [];
+          final Map<String, int> ackLookup = _buildAckLookup(responses[3]);
+          // final Map<String, int> ackLookup = responses.length > 3 ? _buildAckLookup(responses[3]) : <String, int>{};
 
-            if (dataField is String) {
-              dataList = jsonDecode(dataField);
-            } else if (dataField is List) {
-              dataList = dataField;
+          // --- RESPONSE INDEX 2: DATE INFORMATION ---
+          if (responses.length > 2 && responses[2] != null) {
+            final Map<String, dynamic> dateResponse =
+                responses[2] as Map<String, dynamic>;
+
+            if (dateResponse['success'] == true) {
+              var dataField = dateResponse['data'];
+              List<dynamic> dataList = [];
+
+              if (dataField is String) {
+                dataList = jsonDecode(dataField);
+              } else if (dataField is List) {
+                dataList = dataField;
+              }
+
+              if (dataList.isNotEmpty) {
+                final Map<String, dynamic> dateItem =
+                    dataList[0] as Map<String, dynamic>;
+                curr_month_MM = dateItem['curr_month']?.toString() ?? '01';
+                curr_year_YYYY = dateItem['curr_year']?.toString() ?? '1999';
+
+                int monthNumber = int.tryParse(curr_month_MM) ?? 1;
+                int yearNumber = int.tryParse(curr_year_YYYY) ?? 1999;
+                DateTime tempMMMDate = DateTime(yearNumber, monthNumber);
+
+                curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
+              }
             }
-
-            curr_month_MM = responses[2]['data'][0]['curr_month'] ?? 0;
-            curr_year_YYYY = responses[2]['data'][0]['curr_year'] ?? 0;
-
-            int monthNumber = int.parse(curr_month_MM);
-            int yearNumber = int.parse(curr_year_YYYY);
-            DateTime tempMMMDate = DateTime(yearNumber, monthNumber);
-
-            curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
-
-            print("Current month MM: $curr_month_MM");
-            print("Current month MMM: $curr_month_Mmm");
-            print("Current year YYYY: $curr_year_YYYY");
           }
 
-          // Safely access your multi-future index 0 structure
-          if (responses.isNotEmpty && responses[0]?['success'] == true) {
-            final List<dynamic> rawDataList = responses[0]['data'];
+          // --- RESPONSE INDEX 0: REGION LIST OUTLETS ---
+          if (responses.isNotEmpty && responses[0] != null) {
+            final Map<String, dynamic> regionResponse =
+                responses[0] as Map<String, dynamic>;
 
-            // Create a temporary list to hold the parsed API models
-            final List<DealerItemModel> parsedItems = [];
+            if (regionResponse['success'] == true) {
+              final List<dynamic> rawDataList = regionResponse['data'] ?? [];
+              final List<DealerItemModel> parsedItems = [];
 
-            for (int i = 0; i < rawDataList.length; i++) {
-              final item = rawDataList[i];
-              final int currentRank = i + 1;
+              for (int i = 0; i < rawDataList.length; i++) {
+                final Map<String, dynamic> item =
+                    rawDataList[i] as Map<String, dynamic>;
+                final int currentRank = i + 1;
 
-              // Safe numeric conversions from JSON types (ints/doubles)
-              final int? actualCount = (item['ACTUAL_REG_COUNT'] as num?)
-                  ?.toInt();
-              final int? targetCount = (item['TARGET_REG_COUNT'] as num?)
-                  ?.toInt();
-              final bool isAboveTarget =
-                  (actualCount ?? 0) >= (targetCount ?? 0);
+                final int? actualCount = (item['ACTUAL_REG_COUNT'] as num?)
+                    ?.toInt();
+                final int? targetCount = (item['TARGET_REG_COUNT'] as num?)
+                    ?.toInt();
 
-              parsedItems.add(
-                DealerItemModel(
-                  rank: currentRank,
-                  name: item['OUTLET_NAME'] as String?,
-                  outletCode: item['OUTLET_CODE'] as String?,
-                  actual: actualCount,
-                  target: targetCount,
-                  percentage: (item['REG_PCTG'] as num?)?.toInt(),
-                  status: isAboveTarget ? 'Above Target' : 'Below Target',
-                  statusColor: isAboveTarget ? Colors.green : Colors.red,
-                  isGold: currentRank == 1, // Marks rank #1 as Gold
-                  medalColor: currentRank == 1
-                      ? Colors.amber
-                      : currentRank == 2
-                      ? Colors.grey
-                      : currentRank == 3
-                      ? Colors.orange
-                      : null,
-                ),
-              );
+                // 🔹 O(1) lookup instead of parsing a nested per-outlet response
+                final String outletCode = item['OUTLET_CODE']?.toString() ?? '';
+                final int ackAmount = ackLookup[outletCode] ?? 0;
+
+                final int combinedActual = (actualCount ?? 0) + ackAmount;
+                final bool isAboveTarget = combinedActual >= (targetCount ?? 0);
+
+                final regPercentage = (item['REG_PCTG'] as num?)?.toDouble();
+                Color reg_color = Colors.grey;
+
+                if (regPercentage != null) {
+                  if (regPercentage > 99.9) {
+                    reg_color = Colors.green;
+                  } else if (regPercentage > 69.9) {
+                    reg_color = Colors.blue;
+                  } else if (regPercentage > 49.9) {
+                    reg_color = const Color(0xFFE6A100);
+                  } else if (regPercentage > 24.9) {
+                    reg_color = Colors.orange;
+                  } else {
+                    reg_color = Colors.red;
+                  }
+                }
+
+                parsedItems.add(
+                  DealerItemModel(
+                    rank: currentRank,
+                    name: item['OUTLET_NAME'] as String?,
+                    outletCode: item['OUTLET_CODE'] as String?,
+                    actual: combinedActual,
+                    target: targetCount,
+                    percentage: (item['REG_PCTG'] as num?)?.toInt(),
+                    status: isAboveTarget ? 'Above Target' : 'Below Target',
+                    statusColor: reg_color,
+                    isGold: currentRank == 1,
+                    medalColor: currentRank == 1
+                        ? Colors.amber
+                        : currentRank == 2
+                        ? Colors.grey
+                        : currentRank == 3
+                        ? Colors.orange
+                        : null,
+                  ),
+                );
+              }
+              regionListDataOutlet = parsedItems;
             }
-
-            // 2. OVERWRITE the mock list instantly during this render loop cycle
-            regionListDataOutlet = parsedItems;
           }
 
-          if (responses.isNotEmpty && responses[1]?['success'] == true) {
-            if (responses[1]['data'].isNotEmpty) {
-              total_performed_outlets =
-                  responses[1]['data'][0]['TOTAL_ROWS'].toString() ?? '';
-              red_zone_area_outlets =
-                  responses[1]['data'][0]['ROWS_BELOW_50'].toString() ?? '';
-              average_achievement_pctg =
-                  responses[1]['data'][0]['AVERAGE_REG_PCTG'].toString() ?? '';
-              top_performer_outlet =
-                  responses[1]['data'][0]['HIGHEST_OUTLET_NAME'] ?? '';
+          // --- RESPONSE INDEX 1: OUTLET SUMMARY STATS ---
+          if (responses.length > 1 && responses[1] != null) {
+            final Map<String, dynamic> summaryResponse =
+                responses[1] as Map<String, dynamic>;
+
+            if (summaryResponse['success'] == true) {
+              final List<dynamic> summaryData = summaryResponse['data'] ?? [];
+              if (summaryData.isNotEmpty) {
+                final Map<String, dynamic> summaryItem =
+                    summaryData[0] as Map<String, dynamic>;
+
+                total_performed_outlets =
+                    summaryItem['TOTAL_ROWS']?.toString() ?? '0';
+                red_zone_area_outlets =
+                    summaryItem['ROWS_BELOW_50']?.toString() ?? '0';
+                average_achievement_pctg =
+                    summaryItem['AVERAGE_REG_PCTG']?.toString() ?? '0';
+                top_performer_outlet =
+                    summaryItem['HIGHEST_OUTLET_NAME']?.toString() ?? 'N/A';
+              }
             }
           }
         }
@@ -425,12 +487,12 @@ class _DetailListRegionState extends State<DetailListRegion> {
                 fontSize: 20,
               ),
             ),
-            actions: [
+            /*actions: [
               IconButton(
                 icon: const Icon(Icons.menu, color: Colors.black),
                 onPressed: () {},
               ),
-            ],
+            ],*/
           ),
           body: Column(
             children: [

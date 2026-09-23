@@ -34,10 +34,33 @@ class _DetailListModelState extends State<DetailListModel> {
         Api().get_ModelListOfOutlet(outletCode), // Index 0
         Api().get_MntOutletModelSummary(outletCode), // Index 1
         Api().get_currDate(), // Index 2
+        Api().get_AckRegistrationModelByOutlet(outletCode), // Index 3
       ]);
 
       _isInitialized = true;
     }
+  }
+
+  Map<String, int> _buildAckLookupModel(dynamic ackListResponse) {
+    final Map<String, int> lookup = {};
+
+    if (ackListResponse == null || ackListResponse is! Map) return lookup;
+    if (ackListResponse['success'] != true) return lookup;
+
+    final data = ackListResponse['data'];
+    if (data is! List) return lookup;
+
+    for (final row in data) {
+      if (row is Map) {
+        final modelCode = row['MODEL']?.toString();
+        final totalAck = (row['TOTAL_ACK'] as num?)?.toInt() ?? 0;
+        if (modelCode != null) {
+          lookup[modelCode] = totalAck;
+        }
+      }
+    }
+
+    return lookup;
   }
 
   @override
@@ -114,6 +137,7 @@ class _DetailListModelState extends State<DetailListModel> {
 
         if (snapshot.hasData) {
           final List<dynamic> responses = snapshot.data!;
+          final ackLookupModel = _buildAckLookupModel(responses[3]);
 
           if (responses.isNotEmpty && responses[0]?['success'] == true) {
             final List<dynamic> rawDataList = responses[0]['data'];
@@ -125,6 +149,7 @@ class _DetailListModelState extends State<DetailListModel> {
               final int currentRank = i + 1;
 
               // Safe numeric conversions from JSON types (ints/doubles)
+
               final int? actualCount = (item['ACTUAL_REG_COUNT'] as num?)
                   ?.toInt();
               final int? targetCount = (item['TARGET_REG_COUNT'] as num?)
@@ -132,16 +157,42 @@ class _DetailListModelState extends State<DetailListModel> {
               final bool isAboveTarget =
                   (actualCount ?? 0) >= (targetCount ?? 0);
 
+              String modelCode = item['MODEL']?.toString() ?? '';
+              final int ackAmount = ackLookupModel[modelCode] ?? 0;
+              final int combinedActual = (actualCount ?? 0) + ackAmount;
+
+              final regPercentage = (item['REG_PCTG'] as num?)?.toDouble();
+              Color reg_color = Colors.grey;
+
+              if (regPercentage != null) {
+                if (regPercentage > 99.9) {
+                  reg_color = Colors.green;
+                } else if (regPercentage > 69.9) {
+                  // 💡 Added variable name back in
+                  reg_color = Colors.blue;
+                } else if (regPercentage > 49.9) {
+                  reg_color = const Color(
+                    0xFFE6A100,
+                  ); // Added 'const' for performance optimization
+                } else if (regPercentage > 24.9) {
+                  reg_color = Colors.orange;
+                } else {
+                  reg_color = Colors.red;
+                }
+              } else {
+                reg_color = Colors.grey;
+              }
+
               parsedItems.add(
                 DealerItemModel(
                   rank: currentRank,
-                  name: item['MODEL'] as String?,
+                  name: modelCode,
                   outletCode: item['OUTLET_CODE'] as String?,
-                  actual: actualCount,
+                  actual: combinedActual,
                   target: targetCount,
                   percentage: (item['REG_PCTG'] as num?)?.toInt(),
                   status: isAboveTarget ? 'Above Target' : 'Below Target',
-                  statusColor: isAboveTarget ? Colors.green : Colors.red,
+                  statusColor: reg_color,
                   isGold: currentRank == 1, // Marks rank #1 as Gold
                   medalColor: currentRank == 1
                       ? Colors.amber
@@ -182,12 +233,12 @@ class _DetailListModelState extends State<DetailListModel> {
                 fontSize: 20,
               ),
             ),
-            actions: [
+            /*actions: [
               IconButton(
                 icon: const Icon(Icons.menu, color: Colors.black),
                 onPressed: () {},
               ),
-            ],
+            ],*/
           ),
           body: Column(
             children: [

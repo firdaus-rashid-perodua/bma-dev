@@ -22,11 +22,6 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
   void initState() {
     super.initState();
     _loadData(); // 1 reload
-    /*_apiRequestsFuture = Future.wait([
-      Api().get_actMntBkg(), // Index 0
-      Api().get_tgtMntBkg(), // Index 1
-      Api().get_currDate(), // Index 2
-    ]);*/
   }
 
   //2 reload
@@ -46,6 +41,113 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
     // Waits for the new future bundle to finish completing before hiding the spinner
     await _apiRequestsFuture;
   }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Update the global static state variables!
+                setState(() {
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+
+                  // Re-fetch API data for the newly selected date
+                  _loadData();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  // ==========================================
 
   Widget build(BuildContext context) {
     // 1. Extract the arguments map safely
@@ -323,7 +425,7 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -348,7 +450,7 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),
@@ -364,16 +466,34 @@ class _BkgFunctionListPageState extends State<BkgFunctionListPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        // '$displayMonth $displayYear',
-                        '$curr_month_Mmm $curr_year_YYYY',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                      // Text(
+                      //   // '$displayMonth $displayYear',
+                      //   '$curr_month_Mmm $curr_year_YYYY',
+                      //   style: TextStyle(
+                      //     fontSize: 18,
+                      //     fontWeight: FontWeight.w600,
+                      //   ),
+                      // ),
+                      // const SizedBox(width: 8),
+                      // const Icon(Icons.access_time, color: Colors.grey),
+                      InkWell(
+                        onTap: () => _selectMonthYear(context),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              // '$displayMonth $displayYear',
+                              '$curr_month_Mmm $curr_year_YYYY',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.access_time, color: Colors.grey),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.access_time, color: Colors.grey),
                     ],
                   ),
                   const SizedBox(height: 24),

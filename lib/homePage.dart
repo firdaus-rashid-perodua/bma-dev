@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/services/Api.dart';
 import 'registration/reg_functionList.dart';
 
@@ -20,7 +22,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize the future exactly ONCE when the page loads
+    _loadData();
+  }
+
+  //reload
+  void _loadData() {
     _apiRequestsFuture = Future.wait([
       Api().get_actMntReg(), // Index 0
       Api().get_tgtMntReg(), // Index 1
@@ -30,7 +36,125 @@ class _HomePageState extends State<HomePage> {
       //Api.get_tgtMntBook(), // Index 5
       Api().get_actMntBkg(), // Index 4
       Api().get_tgtMntBkg(), // Index 5
+      Api().get_AckRegistration(), // Index 6
+      Api().get_userACL(), // Index 7
+      Api().get_ackReg(), // Index 8
+      Api().get_currDate(), // Index 9
     ]);
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _loadData(); // Triggers a reload of your data blueprints
+    });
+    // Waits for the new future bundle to finish completing before hiding the spinner
+    await _apiRequestsFuture;
+  }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Update the global static state variables!
+                setState(() {
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+
+                  // Re-fetch API data for the newly selected date
+                  _loadData();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget build(BuildContext context) {
@@ -43,23 +167,42 @@ class _HomePageState extends State<HomePage> {
         // 1. Perform error handling if error while connection to DB
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Cannot connect to server',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            body: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Center(
+                  child: Container(
+                    height: MediaQuery.of(context)
+                        .size
+                        .height, // Forces it to take up the full screen height
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.wifi_off,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Cannot connect to server',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Unable to connect to backend.',
+                          style: TextStyle(color: Colors.grey[600]),
+                          // textAlign: Center,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Unable to connect to backend.',
-                    style: TextStyle(color: Colors.grey[600]),
-                    // textAlign: Center,
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -83,6 +226,16 @@ class _HomePageState extends State<HomePage> {
         }
 
         // 3. Fallback default values if the APIs fail or are loading
+        // Date format
+        String curr_month_MM = '01';
+        String curr_month_Mmm = 'Jan';
+        String curr_year_YYYY = '1999';
+
+        // daily ACK amount
+        String regACK = '0';
+        int rawRegACK = 0;
+        int rawRegACK_forYear = 0;
+
         // Registration yearly
         String regActYearly = '00,000';
         String regTgtYearly = '00,000';
@@ -150,7 +303,51 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.hasData) {
           final List<dynamic> responses = snapshot.data!;
 
+          if (responses[9]?['success'] == true &&
+              responses[9]['data'].isNotEmpty) {
+            var dataField = responses[0]['data'];
+            List<dynamic> dataList = [];
+
+            if (dataField is String) {
+              dataList = jsonDecode(dataField);
+            } else if (dataField is List) {
+              dataList = dataField;
+            }
+
+            curr_month_MM = responses[9]['data'][0]['curr_month'] ?? 0;
+            curr_year_YYYY = responses[9]['data'][0]['curr_year'] ?? 0;
+
+            int monthNumber = int.parse(curr_month_MM);
+            int yearNumber = int.parse(curr_year_YYYY);
+            DateTime tempMMMDate = DateTime(yearNumber, monthNumber);
+
+            curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
+
+            print("Current month MM: $curr_month_MM");
+            print("Current month MMM: $curr_month_Mmm");
+            print("Current year YYYY: $curr_year_YYYY");
+          }
+
           // Registration monthly math logic START
+          // Get today ack value
+          print('Global Date Month: ' + globalCurrentMonth);
+          print('Global Date Year: ' + globalCurrentYear);
+          print('Query Date Month: ' + Api.currMonth);
+          print('Query Date Year: ' + Api.currYear);
+
+          if (responses[8]?['success'] == true &&
+              responses[8]['data'].isNotEmpty) {
+            //
+            if (globalCurrentMonth == Api.currMonth &&
+                globalCurrentYear == Api.currYear) {
+              rawRegACK = responses[8]['data'][0]['AMOUNT'] ?? 0;
+              regACK = responses[8]['data'][0]['AMOUNT'].toString() ?? '0';
+            }
+            if (globalCurrentYear == Api.currYear) {
+              rawRegACK_forYear = responses[8]['data'][0]['AMOUNT'] ?? 0;
+            }
+          }
+
           // Parse Registration Month Actual (Index 0)
           if (responses[0]?['success'] == true &&
               responses[0]['data'].isNotEmpty) {
@@ -169,7 +366,9 @@ class _HomePageState extends State<HomePage> {
 
             // Ensure the list is not empty before accessing index 0
             if (dataList.isNotEmpty) {
-              final rawValue = dataList[0]['total_reg_month'];
+              var rawValue = dataList[0]['total_reg_month'];
+              // add ack
+              rawValue = rawValue + rawRegACK;
               final parsedValue = int.tryParse(rawValue?.toString() ?? '') ?? 0;
 
               regMntActual = NumberFormat.decimalPattern().format(parsedValue);
@@ -238,9 +437,9 @@ class _HomePageState extends State<HomePage> {
           // Parse Registration Year Actual (Index 2)
           if (responses[2]?['success'] == true &&
               responses[2]['data'].isNotEmpty) {
-            regActYearly = NumberFormat.decimalPattern().format(
-              responses[2]['data'][0]['total_reg_year'] ?? 0,
-            );
+            var rawYearlyValue = responses[2]['data'][0]['total_reg_year'] ?? 0;
+            rawYearlyValue = rawYearlyValue + rawRegACK_forYear;
+            regActYearly = NumberFormat.decimalPattern().format(rawYearlyValue);
             //regActYearly2 = NumberFormat.decimalPattern().format(3662);
             if (regActYearly == '0') {
               regActYearly = '00,000';
@@ -251,7 +450,7 @@ class _HomePageState extends State<HomePage> {
           if (responses[3]?['success'] == true &&
               responses[3]['data'].isNotEmpty) {
             regTgtYearly = NumberFormat.decimalPattern().format(
-              responses[3]['data'][0]['target_reg_year'] ?? 0,
+              responses[3]['data'][0]['TARGET_REG_YEAR'] ?? 0,
             );
             if (regTgtYearly == '0') {
               regTgtYearly = '00,000';
@@ -259,7 +458,8 @@ class _HomePageState extends State<HomePage> {
 
             if (regActYearly != '00,000' && regTgtYearly != '00,000') {
               rawRegActYearly = responses[2]['data'][0]['total_reg_year'] ?? 0;
-              rawRegTgtYearly = responses[3]['data'][0]['target_reg_year'] ?? 0;
+              rawRegActYearly = rawRegActYearly + rawRegACK_forYear;
+              rawRegTgtYearly = responses[3]['data'][0]['TARGET_REG_YEAR'] ?? 0;
 
               // calculate percentage
               rawRegPctgYearly = ((rawRegActYearly * 100) / rawRegTgtYearly)
@@ -283,6 +483,7 @@ class _HomePageState extends State<HomePage> {
             bookMntActual = NumberFormat.decimalPattern().format(
               responses[4]['data'][0]['total_bkg_month'] ?? 0,
             );
+            // print(bookMntActual);
             if (bookMntActual == '0') {
               bookMntActual = '00,000';
             }
@@ -341,6 +542,45 @@ class _HomePageState extends State<HomePage> {
           }
 
           // Booking monthly math logic END
+
+          if (responses[7]?['success'] == true &&
+              responses[7]['data'].isNotEmpty) {
+            // print(responses[7]['data'][0]['ACL_REGISTRATION']);
+            aclRegistration = responses[7]['data'][0]['ACL_REGISTRATION'];
+            aclBooking = responses[7]['data'][0]['ACL_BOOKING'];
+            aclParts = responses[7]['data'][0]['ACL_PARTS'];
+            aclService = responses[7]['data'][0]['ACL_SERVICE'];
+          }
+
+          if (responses[7]?['success'] == true &&
+              responses[7]['data'].isEmpty) {
+            aclRegistration = 'N';
+            aclBooking = 'N';
+            aclParts = 'N';
+            aclParts = 'N';
+          }
+
+          if (aclRegistration != 'Y') {
+            //
+            regMntActual = '00,000';
+            regMntTarget = '00,000';
+            regPcntge = 0;
+            reg_color = Colors.grey;
+            regPctgText = 'N/A';
+            regShortage = '00.0k';
+            regShortageColor = Colors.grey;
+          }
+
+          if (aclBooking != 'Y') {
+            //
+            bookMntActual = '00,000';
+            bookMntTarget = '00,000';
+            bookPcntge = 0;
+            book_color = Colors.grey;
+            bookPctgText = 'N/A';
+            bookShortage = '00.0k';
+            bookShortageColor = Colors.grey;
+          }
         }
 
         return Scaffold(
@@ -383,8 +623,9 @@ class _HomePageState extends State<HomePage> {
                       // Logout button aligned inside the header
                       InkWell(
                         onTap: () {
-                          Navigator.pop(context); // Closes the drawer
-                          print("Logged out from drawer header");
+                          // Navigator.pop(context); // Closes the drawer
+                          // print("Logged out from drawer header");
+                          Navigator.pushNamed(context, '/loginscreenTest');
                         },
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 4.0),
@@ -413,6 +654,17 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.access_time),
+                  title: Text('${curr_month_Mmm} ' + Api.currYear),
+                  onTap: () => _selectMonthYear(context),
+                  /*onTap: () {
+                    // 1. Close the drawer first
+                    Navigator.pop(context);
+                    // 2. Add your custom function action here
+                    print("Home clicked");
+                  },*/
+                ),
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -453,441 +705,435 @@ class _HomePageState extends State<HomePage> {
                       },
                     );
                   },
-                ),
-                /*ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'Logout (Inline)',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    print("Logged out from inline button");
-                  },
-                ),*/
-                /*const Divider(height: 1), // Optional line separation
-                SafeArea(
-                  top:
-                      false, // Prevents bottom screen notch issues on modern devices
-                  child: ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context); // Closes the drawer
-                      print("Logged out from drawer bottom");
-                    },
-                  ),
                 ),*/
               ],
             ),
           ),
-          body: SafeArea(
-            child: Builder(
-              builder: (BuildContext localContext) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Row(
+          body: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: SingleChildScrollView(
+              // padding: const EdgeInsets.all(16.0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SafeArea(
+                child: Builder(
+                  builder: (BuildContext localContext) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          /*const CircleAvatar(
-                            radius: 28,
-                            backgroundColor: Colors.grey,
-                          ),*/
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Welcome',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
+                          // Header
+                          Row(
+                            children: [
+                              /*const CircleAvatar(
+                                radius: 28,
+                                backgroundColor: Colors.grey,
+                              ),*/
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Welcome',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      // 'Ahmad Firdaus',
+                                      '$globalUserName',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  'Ahmad Firdaus Bin Abd Rashid',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.menu, size: 28),
+                                onPressed: () {
+                                  // This opens the right-side drawer using the key
+                                  _scaffoldKey.currentState?.openEndDrawer();
+                                },
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 24),
+                          const SizedBox(height: 20),
+                          // Main Registration Card 2
+                          Container(
+                            // padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 20,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  const Color.fromARGB(
+                                    255,
+                                    37,
+                                    99,
+                                    243,
+                                  ), // Your color
+                                  const Color.fromARGB(
+                                    255,
+                                    5,
+                                    14,
+                                    144,
+                                  ), // Deep indigo-purple
+                                ],
+                              ),
+                              //color: const Color.fromARGB(255, 97, 41, 207),s
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withValues(alpha: 0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.menu, size: 28),
-                            onPressed: () {
-                              // This opens the right-side drawer using the key
-                              _scaffoldKey.currentState?.openEndDrawer();
-                            },
-                          ),
-                        ],
-                      ),
-                      // const SizedBox(height: 24),
-                      const SizedBox(height: 20),
-                      // Main Registration Card 2
-                      Container(
-                        // padding: const EdgeInsets.all(10),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 20,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color.fromARGB(
-                                255,
-                                37,
-                                99,
-                                243,
-                              ), // Your color
-                              const Color.fromARGB(
-                                255,
-                                5,
-                                14,
-                                144,
-                              ), // Deep indigo-purple
-                            ],
-                          ),
-                          //color: const Color.fromARGB(255, 97, 41, 207),s
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.1),
-                              spreadRadius: 1,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: Text(
-                                'REGISTRATION',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Column(
+                                Center(
+                                  child: Text(
+                                    'REGISTRATION',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    SizedBox(height: 10),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(height: 10),
+                                        Text(
+                                          'ACTUAL REGISTRATION',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            // color: Colors.grey,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          // '82,198',
+                                          regActYearly,
+                                          style: TextStyle(
+                                            fontSize: 38,
+                                            fontWeight: FontWeight.bold,
+                                            // color: Colors.black,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        SizedBox(
+                                          // width: 90,
+                                          // height: 90,
+                                          width: 80,
+                                          height: 80,
+                                          child: CircularProgressIndicator(
+                                            value: rawRegPctgYearly / 100,
+                                            strokeWidth: 8,
+                                            backgroundColor: Colors.grey[200],
+                                            valueColor:
+                                                const AlwaysStoppedAnimation<
+                                                  Color
+                                                >(Colors.green),
+                                          ),
+                                        ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '$regPctgYearly%',
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                // color: Colors.green,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            Text(
+                                              'of $regTgtYearly',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                // color: Colors.grey,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    /*Expanded(
+                                      child: Text(
+                                        // '82,198',
+                                        regActYearly,
+                                        style: TextStyle(
+                                          fontSize: 42,
+                                          fontWeight: FontWeight.bold,
+                                          // color: Colors.black,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),*/
+                                    const SizedBox(width: 16),
+                                    // Circular Progress
+                                    /*Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 90,
+                                          height: 90,
+                                          child: CircularProgressIndicator(
+                                            value: 0.9657,
+                                            strokeWidth: 8,
+                                            backgroundColor: Colors.grey[200],
+                                            valueColor:
+                                                const AlwaysStoppedAnimation<Color>(
+                                                  Colors.green,
+                                                ),
+                                          ),
+                                        ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Text(
+                                              '96.6%',
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                // color: Colors.green,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            Text(
+                                              'of $regTgtYearly',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                // color: Colors.grey,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),*/
+                                  ],
+                                ),
+                                //const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.arrow_upward,
+                                      // color: Colors.green,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'ACTUAL REGISTRATION',
+                                      '$regPctgYearly% of target achieved',
                                       style: TextStyle(
-                                        fontSize: 12,
-                                        // color: Colors.grey,
+                                        // color: Colors.green,
                                         color: Colors.white,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    Text(
-                                      // '82,198',
-                                      regActYearly,
-                                      style: TextStyle(
-                                        fontSize: 38,
-                                        fontWeight: FontWeight.bold,
-                                        // color: Colors.black,
-                                        color: Colors.white,
-                                      ),
-                                    ),
                                   ],
                                 ),
-                                Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    SizedBox(
-                                      // width: 90,
-                                      // height: 90,
-                                      width: 80,
-                                      height: 80,
-                                      child: CircularProgressIndicator(
-                                        value: 0.1,
-                                        strokeWidth: 8,
-                                        backgroundColor: Colors.grey[200],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                              Colors.green,
-                                            ),
-                                      ),
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          '$regPctgYearly%',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            // color: Colors.green,
-                                            color: Colors.white,
-                                          ),
+                                const SizedBox(height: 16),
+                                // Progress Bar
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: rawRegPctgYearly / 100,
+                                    minHeight: 8,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                          Color.fromARGB(255, 21, 212, 27),
                                         ),
-                                        Text(
-                                          'of $regTgtYearly',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            // color: Colors.grey,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /*Expanded(
-                                  child: Text(
-                                    // '82,198',
-                                    regActYearly,
-                                    style: TextStyle(
-                                      fontSize: 42,
-                                      fontWeight: FontWeight.bold,
-                                      // color: Colors.black,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),*/
-                                const SizedBox(width: 16),
-                                // Circular Progress
-                                /*Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 90,
-                                      height: 90,
-                                      child: CircularProgressIndicator(
-                                        value: 0.9657,
-                                        strokeWidth: 8,
-                                        backgroundColor: Colors.grey[200],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                              Colors.green,
-                                            ),
-                                      ),
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Text(
-                                          '96.6%',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            // color: Colors.green,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          'of $regTgtYearly',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            // color: Colors.grey,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),*/
-                              ],
-                            ),
-                            //const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.arrow_upward,
-                                  // color: Colors.green,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$regPctgYearly% of target achieved',
-                                  style: TextStyle(
-                                    // color: Colors.green,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    //_buildTargetInfo('TARGET', '360,000'),
+                                    _buildTargetInfo('TARGET', regTgtYearly),
+                                    const Spacer(),
+                                    _buildTargetInfo(
+                                      'REMAINING',
+                                      regRemaining,
+                                      alignRight: true,
+                                    ),
+                                    /*_buildTargetInfo(
+                                      'REMAINING',
+                                      remainingTarget,
+                                      alignRight: true,
+                                    ),*/
+                                  ],
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            // Progress Bar
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: LinearProgressIndicator(
-                                value: 0.966,
-                                minHeight: 8,
-                                backgroundColor: Colors.grey[200],
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color.fromARGB(255, 21, 212, 27),
-                                ),
+                          ),
+                          const SizedBox(height: 15),
+                          // Four Cards Grid
+                          GridView.count(
+                            crossAxisCount: 2,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.85,
+                            children: [
+                              _buildMetricCard(
+                                icon: Icons.directions_car,
+                                title: 'Registration',
+                                //current: '7,076',
+                                //target: '34,000',
+                                current: regMntActual,
+                                target: regMntTarget,
+                                percentage: regPcntge,
+                                //percentageColor: Colors.blue,
+                                percentageColor: reg_color,
+                                percentageText: regPctgText,
+                                change: regShortage,
+                                changeColor: regShortageColor,
+                                onTap: () {
+                                  print("Registration module pressed");
+                                  if (aclRegistration == 'Y') {
+                                    //
+                                    Navigator.pushNamed(
+                                      localContext, // Uses the fresh localContext to trace routes safely
+                                      '/detailpage2',
+                                      arguments: {
+                                        'title': 'Registration',
+                                        'month': 'May',
+                                        'year': '2026',
+                                      },
+                                    );
+                                  } else {
+                                    print(
+                                      "User have no access to Registration module",
+                                    );
+                                  }
+                                },
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                //_buildTargetInfo('TARGET', '360,000'),
-                                _buildTargetInfo('TARGET', regTgtYearly),
-                                const Spacer(),
-                                _buildTargetInfo(
-                                  'REMAINING',
-                                  regRemaining,
-                                  alignRight: true,
-                                ),
-                                /*_buildTargetInfo(
-                                  'REMAINING',
-                                  remainingTarget,
-                                  alignRight: true,
-                                ),*/
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      // Four Cards Grid
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.85,
-                        children: [
-                          _buildMetricCard(
-                            icon: Icons.directions_car,
-                            title: 'Registration',
-                            //current: '7,076',
-                            //target: '34,000',
-                            current: regMntActual,
-                            target: regMntTarget,
-                            percentage: regPcntge,
-                            //percentageColor: Colors.blue,
-                            percentageColor: reg_color,
-                            percentageText: regPctgText,
-                            change: regShortage,
-                            changeColor: regShortageColor,
-                            onTap: () {
-                              print("Registration module pressed");
-                              Navigator.pushNamed(
-                                localContext, // Uses the fresh localContext to trace routes safely
-                                '/detailpage2',
-                                arguments: {
-                                  'title': 'Registration',
-                                  'month': 'May',
-                                  'year': '2026',
+                              _buildMetricCard(
+                                icon: Icons.person,
+                                title: 'Booking',
+                                current: bookMntActual,
+                                target: bookMntTarget,
+                                percentage: bookPcntge,
+                                percentageColor: book_color,
+                                percentageText: bookPctgText,
+                                // change: '+0.0k',
+                                change: bookShortage,
+                                changeColor: bookShortageColor,
+                                onTap: () {
+                                  print("Booking module pressed");
+                                  if (aclBooking == 'Y') {
+                                    Navigator.pushNamed(
+                                      localContext, // Uses the fresh localContext to trace routes safely
+                                      '/bkgfunctionList',
+                                      arguments: {
+                                        'title': 'Booking',
+                                        'month': 'May',
+                                        'year': '2026',
+                                      },
+                                    );
+                                  } else {
+                                    print(
+                                      "User have no access to Booking module",
+                                    );
+                                  }
                                 },
-                              );
-                            },
+                              ),
+                              _buildMetricCard(
+                                icon: Icons.build,
+                                title: 'Service',
+                                current: serviceMntActual,
+                                target: serviceMntTarget,
+                                percentage: servicePcntge,
+                                percentageColor: service_color,
+                                percentageText: servicePctgText,
+                                change: serviceShortage,
+                                changeColor: serviceShortageColor,
+                              ),
+                              _buildMetricCard(
+                                icon: Icons.handyman,
+                                title: 'Parts',
+                                current: partsMntActual,
+                                target: partsMntTarget,
+                                percentage: partsPcntge,
+                                percentageColor: parts_color,
+                                percentageText: partsPctgText,
+                                change: partsShortage,
+                                changeColor: partsShortageColor,
+                              ),
+                            ],
                           ),
-                          _buildMetricCard(
-                            icon: Icons.person,
-                            title: 'Booking',
-                            current: bookMntActual,
-                            target: bookMntTarget,
-                            percentage: bookPcntge,
-                            percentageColor: book_color,
-                            percentageText: bookPctgText,
-                            // change: '+0.0k',
-                            change: bookShortage,
-                            changeColor: bookShortageColor,
-                            onTap: () {
-                              print("Booking module pressed");
-                              Navigator.pushNamed(
-                                localContext, // Uses the fresh localContext to trace routes safely
-                                '/bkgfunctionList',
-                                arguments: {
-                                  'title': 'Booking',
-                                  'month': 'May',
-                                  'year': '2026',
-                                },
-                              );
-                            },
-                          ),
-                          _buildMetricCard(
-                            icon: Icons.build,
-                            title: 'Service',
-                            current: serviceMntActual,
-                            target: serviceMntTarget,
-                            percentage: servicePcntge,
-                            percentageColor: service_color,
-                            percentageText: servicePctgText,
-                            change: serviceShortage,
-                            changeColor: serviceShortageColor,
-                          ),
-                          _buildMetricCard(
-                            icon: Icons.handyman,
-                            title: 'Parts',
-                            current: partsMntActual,
-                            target: partsMntTarget,
-                            percentage: partsPcntge,
-                            percentageColor: parts_color,
-                            percentageText: partsPctgText,
-                            change: partsShortage,
-                            changeColor: partsShortageColor,
+                          const SizedBox(height: 32),
+                          // Bottom Icons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildBottomIcon(
+                                Icons.directions_car,
+                                'POV',
+                                Colors.blue,
+                              ),
+                              _buildBottomIcon(
+                                Icons.shield,
+                                'Insurance',
+                                Colors.indigo,
+                              ),
+                              _buildBottomIcon(
+                                Icons.settings,
+                                'GearUp',
+                                Colors.deepPurple,
+                              ),
+                              _buildBottomIcon(
+                                Icons.factory,
+                                'Production',
+                                Colors.blue,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
-                      // Bottom Icons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildBottomIcon(
-                            Icons.directions_car,
-                            'POV',
-                            Colors.blue,
-                          ),
-                          _buildBottomIcon(
-                            Icons.shield,
-                            'Insurance',
-                            Colors.indigo,
-                          ),
-                          _buildBottomIcon(
-                            Icons.settings,
-                            'GearUp',
-                            Colors.deepPurple,
-                          ),
-                          _buildBottomIcon(
-                            Icons.factory,
-                            'Production',
-                            Colors.blue,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         );

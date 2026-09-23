@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/services/Api.dart';
 // import 'reg_detailList.dart';
 import 'reg_dashboard.dart';
@@ -45,6 +46,7 @@ class _DetailPageState extends State<DetailPage> {
       Api().get_actMntReg(),
       Api().get_tgtMntReg(),
       Api().get_currDate(),
+      Api().get_ackReg(),
     ]);
   }
 
@@ -211,6 +213,8 @@ class _DetailPageState extends State<DetailPage> {
         }
 
         // 3. Fallback default values if the APIs fail or are loading
+        int rawRegACK = 0;
+
         String regActual = '00,000';
         String regTarget = '00,000';
         int raw_regActual = 0;
@@ -252,6 +256,15 @@ class _DetailPageState extends State<DetailPage> {
             print("Current year YYYY: $curr_year_YYYY");
           }
 
+          if (responses[3]?['success'] == true &&
+              responses[3]['data'].isNotEmpty) {
+            //
+            if (globalCurrentMonth == Api.currMonth &&
+                globalCurrentYear == Api.currYear) {
+              rawRegACK = responses[3]['data'][0]['AMOUNT'] ?? 0;
+            }
+          }
+
           if (responses[0]?['success'] == true &&
               responses[0]['data'].isNotEmpty) {
             //
@@ -265,9 +278,11 @@ class _DetailPageState extends State<DetailPage> {
             }
 
             if (dataList.isNotEmpty) {
-              final rawValue = dataList[0]['total_reg_month'];
+              var rawValue = dataList[0]['total_reg_month'];
+              rawValue = rawValue + rawRegACK;
 
               raw_regActual = responses[0]['data'][0]['total_reg_month'] ?? 0;
+              raw_regActual = raw_regActual + rawRegACK;
               final parsedValue = int.tryParse(rawValue?.toString() ?? '') ?? 0;
 
               regActual = NumberFormat.decimalPattern().format(parsedValue);
@@ -413,7 +428,7 @@ class _DetailPageState extends State<DetailPage> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -454,36 +469,6 @@ class _DetailPageState extends State<DetailPage> {
                       },
                     );
                   },
-                ),
-                /*ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'Logout (Inline)',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    print("Logged out from inline button");
-                  },
-                ),*/
-                /*const Divider(height: 1), // Optional line separation
-                SafeArea(
-                  top:
-                      false, // Prevents bottom screen notch issues on modern devices
-                  child: ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context); // Closes the drawer
-                      print("Logged out from drawer bottom");
-                    },
-                  ),
                 ),*/
               ],
             ),

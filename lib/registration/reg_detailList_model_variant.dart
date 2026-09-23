@@ -262,7 +262,7 @@ class _DetailListVariantState extends State<DetailListVariant> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -287,7 +287,7 @@ class _DetailListVariantState extends State<DetailListVariant> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:test_1/global.dart';
 import 'package:test_1/model/actXtarget_model.dart';
 import 'package:intl/intl.dart';
 
@@ -19,12 +20,12 @@ class Api {
   static const String ldapUrl = String.fromEnvironment('API_LDAP_URL');
 
   // DateTime now = DateTime.now();
-  // String currMonth = DateFormat('MM').format(DateTime.now());
-  // String currYear = DateFormat.y().format(DateTime.now());
+  static String currMonth = DateFormat('MM').format(DateTime.now());
+  static String currYear = DateFormat.y().format(DateTime.now());
   // String currMonth = '07';
   // String currYear = '2025';
-  static String currMonth = '06';
-  static String currYear = '2026';
+  // static String currMonth = '06';
+  // static String currYear = '2026';
 
   get_currDate() async {
     return {
@@ -74,14 +75,78 @@ class Api {
         "success": false,
         "message":
             "Connection to authentication server failed. " +
-            ldapUrl +
-            " " +
+            // ldapUrl +
+            // " " +
             e.toString(),
         "error": e.toString(),
       };
     }
   }
   //end login
+
+  get_userACL() async {
+    // List<actTarget> reg_yearAct = [];
+
+    String uriParam = "?username=$globalUserEmail";
+
+    try {
+      final res = await http
+          .get(Uri.parse(baseUrl + "user-access" + uriParam))
+          .timeout(const Duration(seconds: 5)); // placed right after http.get()
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        print("Api.dart - get_userACL() : $data");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_userACL() : ' + e.toString());
+      // return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+      };
+    }
+  }
+
+  get_ackReg() async {
+    List<actTarget> reg_yearAct = [];
+
+    // String uriParam = "?year=$currYear";
+
+    try {
+      final res = await http
+          .get(Uri.parse(baseUrl + "dashboard/ack_registration_temp"))
+          .timeout(const Duration(seconds: 5)); // placed right after http.get()
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        print("Api.dart - get_ackReg() : $data");
+        print("month: $currMonth");
+        print("year: $currYear");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_ackReg() : ' + e.toString());
+      // return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+      };
+    }
+  }
 
   get_actYearReg() async {
     List<actTarget> reg_yearAct = [];
@@ -119,9 +184,11 @@ class Api {
   static get_tgtYearReg() async {
     List<regTarget> reg_yearTgt = [];
 
+    String uriParam = "?year=$currYear";
+
     try {
       final res = await http
-          .get(Uri.parse(baseUrl + "dashboard/year_regTarget"))
+          .get(Uri.parse(baseUrl + "dashboard/year_regTarget" + uriParam))
           .timeout(const Duration(seconds: 5));
       ;
 
@@ -132,6 +199,7 @@ class Api {
 
         return data;
       } else {
+        print("Api.dart - fail get_tgtYearReg()");
         return [];
       }
     } catch (e) {
@@ -425,6 +493,42 @@ class Api {
     }
   }
 
+  get_BkgModelListOfOutlet(String outletcode) async {
+    //List<actTarget> reg_RegionListMntOutlets = [];
+
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    String uriParam = "?month=$currMonth&year=$currYear&outletcode=$outletcode";
+
+    try {
+      final res = await http
+          .get(Uri.parse(baseUrl + "booking/mnt_listModelOutlet" + uriParam))
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_ModelListOfOutlet() result : $data");
+        print("Api.dart - get_BkgModelListOfOutlet()");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_BkgModelListOfOutlet() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_BkgModelListOfOutlet() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
   get_RegionMntRegOutletSummary(String regionCode) async {
     List<actTarget> reg_RegionListMntOutlets = [];
 
@@ -589,7 +693,8 @@ class Api {
 
     try {
       final res = await http
-          .get(Uri.parse(baseUrl + "booking/mnt_ListActual_ora" + uriParam))
+          // .get(Uri.parse(baseUrl + "booking/mnt_ListActual_ora" + uriParam))
+          .get(Uri.parse(baseUrl + "booking/mnt_ListActual" + uriParam))
           .timeout(const Duration(seconds: 25));
       ;
 
@@ -626,7 +731,8 @@ class Api {
     try {
       final res = await http
           .get(
-            Uri.parse(baseUrl + "booking/mnt_listRegionOutlet_ora" + uriParam),
+            // Uri.parse(baseUrl + "booking/mnt_listRegionOutlet_ora" + uriParam),
+            Uri.parse(baseUrl + "booking/mnt_listRegionOutlet" + uriParam),
           )
           .timeout(const Duration(seconds: 4));
       ;
@@ -645,6 +751,234 @@ class Api {
       }
     } catch (e) {
       debugPrint('Api.dart - get_RegionListMntBkgOutlets() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistration() async {
+    // List<actTarget> reg_RegionListMntOutlets = [];
+
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    String uriParam = "";
+
+    try {
+      final res = await http
+          .get(Uri.parse(baseUrl + "dashboard/ack_registration" + uriParam))
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistration() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistration() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_AckRegistration() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistrationOutlet(String outletcode) async {
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    String uriParam = "?outletcode=$outletcode";
+
+    try {
+      final res = await http
+          .get(
+            Uri.parse(baseUrl + "dashboard/ack_registration_outlet" + uriParam),
+          )
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistrationOutlet() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistrationOutlet() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_AckRegistrationOutlet() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistrationOutletList() async {
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    // String uriParam = "?outletcode=$outletcode";
+    String uriParam = "";
+
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              baseUrl + "dashboard/ack_registration_list_outlet" + uriParam,
+            ),
+          )
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistrationOutletList() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistrationOutletList() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint(
+        'Api.dart - get_AckRegistrationOutletList() : ' + e.toString(),
+      );
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistrationRegion() async {
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    // String uriParam = "?outletcode=$outletcode";
+    String uriParam = "";
+
+    try {
+      final res = await http
+          .get(
+            Uri.parse(baseUrl + "dashboard/ack_registration_region" + uriParam),
+          )
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistrationRegion() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistrationRegion() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_AckRegistrationRegion() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistrationModel() async {
+    // String uriParam = "?month=$currMonth&year=$currYear";
+    // String uriParam = "?outletcode=$outletcode";
+    String uriParam = "";
+
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              baseUrl + "dashboard/ack_registration_model_outlet" + uriParam,
+            ),
+          )
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistrationModel() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistrationModel() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Api.dart - get_AckRegistrationModel() : ' + e.toString());
+      //return [];
+      return {
+        "success": false,
+        "message": "Failed to read database table",
+        "error": e.toString(),
+        "data": [],
+      };
+    }
+  }
+
+  get_AckRegistrationModelByOutlet(String outletcode) async {
+    String uriParam = "?outletcode=$outletcode";
+
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              baseUrl + "dashboard/ack_registration_model_outlet" + uriParam,
+            ),
+          )
+          .timeout(const Duration(seconds: 4));
+      ;
+
+      if (res.statusCode == 200) {
+        var data = jsonDecode(res.body);
+        //print("ok");
+        // print("Api.dart - get_RegionListMntBkgOutlets() result : $data");
+        print("Api.dart - get_AckRegistrationModelByOutlet() : success");
+
+        return data;
+      } else {
+        var data = jsonDecode(res.body);
+        print("Api.dart - get_AckRegistrationModelByOutlet() : $data");
+        return data;
+      }
+    } catch (e) {
+      debugPrint(
+        'Api.dart - get_AckRegistrationModelByOutlet() : ' + e.toString(),
+      );
       //return [];
       return {
         "success": false,

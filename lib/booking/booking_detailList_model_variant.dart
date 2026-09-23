@@ -262,7 +262,7 @@ class _DetailListVariantBkgState extends State<DetailListVariantBkg> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -287,7 +287,7 @@ class _DetailListVariantBkgState extends State<DetailListVariantBkg> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),

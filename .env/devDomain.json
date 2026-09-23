@@ -1,4 +1,4 @@
 {
-    "API_BASE_URL": "https://primego.perodua.com.my/api/",
-    "API_LDAP_URL": "https://primego.perodua.com.my/"
+    "API_BASE_URL": "https://devprimego.perodua.com.my/api/",
+    "API_LDAP_URL": "https://devprimego.perodua.com.my/"
 }

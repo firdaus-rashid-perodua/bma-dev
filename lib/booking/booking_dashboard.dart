@@ -285,6 +285,10 @@ class BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
     _apiRequestsFuture = Future.wait([
       // Api().get_actMntReg(), // Index 0
       Api().get_actMntBkg(), // Index 0
@@ -294,6 +298,14 @@ class BookingScreenState extends State<BookingScreen> {
       Api().get_RegionListMntBkg(), // Index 2
       Api().get_RegionListMntRegModel(), // Index 3
     ]);
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _loadData(); // Triggers a reload of your data blueprints
+    });
+    // Waits for the new future bundle to finish completing before hiding the spinner
+    await _apiRequestsFuture;
   }
 
   @override
@@ -323,23 +335,32 @@ class BookingScreenState extends State<BookingScreen> {
       builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Cannot connect to server',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            body: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Cannot connect to server',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Unable to connect to backend.',
+                        style: TextStyle(color: Colors.grey[600]),
+                        // textAlign: Center,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Unable to connect to backend.',
-                    style: TextStyle(color: Colors.grey[600]),
-                    // textAlign: Center,
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -562,7 +583,7 @@ class BookingScreenState extends State<BookingScreen> {
                     ],
                   ),
                 ),
-                ListTile(
+                /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
                   onTap: () {
@@ -587,388 +608,393 @@ class BookingScreenState extends State<BookingScreen> {
                     Navigator.pop(context);
                     print("Settings clicked");
                   },
-                ),
+                ),*/
               ],
             ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Actual Registration Card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        spreadRadius: 1,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Text(
-                          'BOOKING',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+          body: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Actual Registration Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withValues(alpha: 0.1),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                      Text(
-                        'ACTUAL BOOKING',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              // '82,198',
-                              regActual,
-                              style: TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Text(
+                            'BOOKING',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          // Circular Progress
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 90,
-                                height: 90,
-                                child: CircularProgressIndicator(
-                                  value: 1.029,
-                                  strokeWidth: 8,
-                                  backgroundColor: Colors.grey[200],
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                        Colors.green,
-                                      ),
+                        ),
+                        Text(
+                          'ACTUAL BOOKING',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                // '82,198',
+                                regActual,
+                                style: TextStyle(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
                                 ),
                               ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    '102.9%',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                  const Text(
-                                    'of 30,500',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.arrow_upward,
-                            color: Colors.green,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            '102.9% of target achieved',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Progress Bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: 0.228,
-                          minHeight: 8,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.green,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          //_buildTargetInfo('TARGET', '360,000'),
-                          _buildTargetInfo('TARGET', regTarget),
-                          const Spacer(),
-                          // _buildTargetInfo('REMAINING','277,802',alignRight: true,),
-                          _buildTargetInfo(
-                            'REMAINING',
-                            remainingTarget,
-                            alignRight: true,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Tabs
-                Row(
-                  children: [
-                    _buildTab(
-                      context,
-                      'Region',
-                      Icons.location_on,
-                      dashboard.isRegionView,
-                      () => dashboard.setView(true),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildTab(
-                      context,
-                      'Model',
-                      Icons.directions_car,
-                      !dashboard.isRegionView,
-                      () => dashboard.setView(false),
-                    ),
-                  ],
-                ),
-
-                /*Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Region',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            const SizedBox(width: 16),
+                            // Circular Progress
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 90,
+                                  height: 90,
+                                  child: CircularProgressIndicator(
+                                    value: 1.029,
+                                    strokeWidth: 8,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                          Colors.green,
+                                        ),
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      '102.9%',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                    const Text(
+                                      'of 30,500',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        const SizedBox(height: 12),
+                        Row(
                           children: [
-                            Icon(
-                              Icons.directions_car,
-                              color: Colors.grey,
-                              size: 20,
+                            const Icon(
+                              Icons.arrow_upward,
+                              color: Colors.green,
+                              size: 18,
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Model',
+                            const SizedBox(width: 4),
+                            const Text(
+                              '102.9% of target achieved',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: Colors.green,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),*/
-                const SizedBox(height: 24),
-
-                // Region Cards Grid
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  // childAspectRatio: 1.05,
-                  childAspectRatio: 0.85,
-                  children: [
-                    //...data.map<Widget>((item) => _buildTestRegionCard(item)).toList(),
-                    ...data.map<Widget>((item) {
-                      return InkWell(
-                        onTap: () {
-                          // Create the arguments map with data from your current item loop
-                          // print('parameter: ${item.regionCode}');
-                          final routeArgs = {
-                            'title': 'Booking',
-                            'region_name': item.title,
-                            'region_code': item.regionCode,
-                          };
-
-                          if (item.routeType == 'REGION') {
-                            Navigator.pushNamed(
-                              context,
-                              '/bkgdetaillist',
-                              arguments: routeArgs,
-                            );
-                          } else if (item.routeType == 'MODEL') {
-                            Navigator.pushNamed(
-                              context,
-                              '/bkgdetaillistModel',
-                              arguments: routeArgs,
-                            );
-                          } else {
-                            Navigator.pushNamed(
-                              context,
-                              '/bkgdetaillist',
-                              arguments: routeArgs,
-                            );
-                          }
-                        },
-                        child: _buildTestRegionCard(
-                          item,
-                        ), // Renders your card UI layout design
-                      );
-                    }).toList(),
-                    /*_buildRegionCard(
-                      title: 'TEST',
-                      percentage: '57.3%',
-                      color: Colors.green,
-                      actual: '1,746',
-                      target: '3,046',
-                      yoy: '+13.1% MTD',
-                      yoyColor: Colors.green,
-                      onTap: () {
-                        /*Navigator.push(
-                          context,
-                          //MaterialPageRoute(builder: (context) => HomePage()),
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DetailList(title: 'test - Yearly target'),
-                            //BookingScreen(),
+                        const SizedBox(height: 16),
+                        // Progress Bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: 0.228,
+                            minHeight: 8,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.green,
+                            ),
                           ),
-                        );*/
-                        Navigator.pushNamed(context, '/detaillist');
-                      },
-                    ),*/
-                  ],
-                  /* children: [
-                    _buildRegionCard(
-                      title: 'CENTRAL 1',
-                      percentage: '57.3%',
-                      color: Colors.green,
-                      actual: '1,746',
-                      target: '3,046',
-                      yoy: '+13.1% MTD',
-                      yoyColor: Colors.green,
-                      onTap: () {
-                        /*Navigator.push(
-                          context,
-                          //MaterialPageRoute(builder: (context) => HomePage()),
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DetailList(title: 'test - Yearly target'),
-                            //BookingScreen(),
-                          ),
-                        );*/
-                        Navigator.pushNamed(context, '/detaillist');
-                      },
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            //_buildTargetInfo('TARGET', '360,000'),
+                            _buildTargetInfo('TARGET', regTarget),
+                            const Spacer(),
+                            // _buildTargetInfo('REMAINING','277,802',alignRight: true,),
+                            _buildTargetInfo(
+                              'REMAINING',
+                              remainingTarget,
+                              alignRight: true,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    _buildRegionCard(
-                      title: 'CENTRAL 2',
-                      percentage: '201.2%',
-                      color: Colors.green,
-                      actual: regActual,,
-                      target: '1,023',
-                      yoy: '+12.1% MTD',
-                      yoyColor: Colors.green,
-                      onTap: () {
-                        Navigator.pushNamed(context, '/registrationpage_test');
-                      },
-                    ),
-                    _buildRegionCard(
-                      title: 'CENTRAL 3',
-                      percentage: '21.5%',
-                      color: Colors.orange,
-                      actual: '438',
-                      target: '2,041',
-                      yoy: '+15.7% MTD',
-                      yoyColor: Colors.green,
-                    ),
-                    _buildRegionCard(
-                      title: 'CENTRAL 4',
-                      percentage: '24.5%',
-                      color: Colors.orange,
-                      actual: '325',
-                      target: '1,325',
-                      yoy: '+58.8% MTD',
-                      yoyColor: Colors.green,
-                    ),
-                  ], */
-                ),
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Last Updated
-                Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // Tabs
+                  Row(
                     children: [
-                      const Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.grey,
+                      _buildTab(
+                        context,
+                        'Region',
+                        Icons.location_on,
+                        dashboard.isRegionView,
+                        () => dashboard.setView(true),
                       ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Last updated: 23 May 2025, 09:41 AM',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                      const SizedBox(width: 12),
+                      _buildTab(
+                        context,
+                        'Model',
+                        Icons.directions_car,
+                        !dashboard.isRegionView,
+                        () => dashboard.setView(false),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 80), // Space for bottom nav
-              ],
+                  /*Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Region',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.directions_car,
+                                color: Colors.grey,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Model',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),*/
+                  const SizedBox(height: 24),
+
+                  // Region Cards Grid
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    // childAspectRatio: 1.05,
+                    childAspectRatio: 0.85,
+                    children: [
+                      //...data.map<Widget>((item) => _buildTestRegionCard(item)).toList(),
+                      ...data.map<Widget>((item) {
+                        return InkWell(
+                          onTap: () {
+                            // Create the arguments map with data from your current item loop
+                            // print('parameter: ${item.regionCode}');
+                            final routeArgs = {
+                              'title': 'Booking',
+                              'region_name': item.title,
+                              'region_code': item.regionCode,
+                            };
+
+                            if (item.routeType == 'REGION') {
+                              Navigator.pushNamed(
+                                context,
+                                '/bkgdetaillist',
+                                arguments: routeArgs,
+                              );
+                            } else if (item.routeType == 'MODEL') {
+                              // Navigator.pushNamed(
+                              //   context,
+                              //   '/bkgdetaillistModel',
+                              //   arguments: routeArgs,
+                              // );
+                              null;
+                            } else {
+                              Navigator.pushNamed(
+                                context,
+                                '/bkgdetaillist',
+                                arguments: routeArgs,
+                              );
+                            }
+                          },
+                          child: _buildTestRegionCard(
+                            item,
+                          ), // Renders your card UI layout design
+                        );
+                      }).toList(),
+                      /*_buildRegionCard(
+                        title: 'TEST',
+                        percentage: '57.3%',
+                        color: Colors.green,
+                        actual: '1,746',
+                        target: '3,046',
+                        yoy: '+13.1% MTD',
+                        yoyColor: Colors.green,
+                        onTap: () {
+                          /*Navigator.push(
+                            context,
+                            //MaterialPageRoute(builder: (context) => HomePage()),
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DetailList(title: 'test - Yearly target'),
+                              //BookingScreen(),
+                            ),
+                          );*/
+                          Navigator.pushNamed(context, '/detaillist');
+                        },
+                      ),*/
+                    ],
+                    /* children: [
+                      _buildRegionCard(
+                        title: 'CENTRAL 1',
+                        percentage: '57.3%',
+                        color: Colors.green,
+                        actual: '1,746',
+                        target: '3,046',
+                        yoy: '+13.1% MTD',
+                        yoyColor: Colors.green,
+                        onTap: () {
+                          /*Navigator.push(
+                            context,
+                            //MaterialPageRoute(builder: (context) => HomePage()),
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DetailList(title: 'test - Yearly target'),
+                              //BookingScreen(),
+                            ),
+                          );*/
+                          Navigator.pushNamed(context, '/detaillist');
+                        },
+                      ),
+                      _buildRegionCard(
+                        title: 'CENTRAL 2',
+                        percentage: '201.2%',
+                        color: Colors.green,
+                        actual: regActual,,
+                        target: '1,023',
+                        yoy: '+12.1% MTD',
+                        yoyColor: Colors.green,
+                        onTap: () {
+                          Navigator.pushNamed(context, '/registrationpage_test');
+                        },
+                      ),
+                      _buildRegionCard(
+                        title: 'CENTRAL 3',
+                        percentage: '21.5%',
+                        color: Colors.orange,
+                        actual: '438',
+                        target: '2,041',
+                        yoy: '+15.7% MTD',
+                        yoyColor: Colors.green,
+                      ),
+                      _buildRegionCard(
+                        title: 'CENTRAL 4',
+                        percentage: '24.5%',
+                        color: Colors.orange,
+                        actual: '325',
+                        target: '1,325',
+                        yoy: '+58.8% MTD',
+                        yoyColor: Colors.green,
+                      ),
+                    ], */
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Last Updated
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Last updated: 23 May 2025, 09:41 AM',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 80), // Space for bottom nav
+                ],
+              ),
             ),
           ),
         );

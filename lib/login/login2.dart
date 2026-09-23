@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/services/Api.dart';
 
 class PeroduaLoginPage extends StatefulWidget {
@@ -42,7 +44,28 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
 
       // Handle the API result mapping
       if (result['success'] == true) {
-        // Clear input text fields upon success
+        // 1. Grab the user array out of the response data
+        var userList = result['data']['user'];
+
+        // 2. Ensure the list exists and is not empty before accessing index 0
+        if (userList != null && userList is List && userList.isNotEmpty) {
+          var userData =
+              userList[0]; // 👈 Look at the first item inside the array
+
+          // 3. Save directly to your global variables
+          globalUserName = userData['name'] ?? 'User';
+          globalUserEmail = userData['email'] ?? '';
+          // isUserLoggedIn = true;
+
+          // always re-set to current date and month
+          setState(() {
+            DateTime now = DateTime.now();
+            Api.currMonth = now.month.toString().padLeft(2, '0');
+            Api.currYear = now.year.toString();
+          });
+
+          print("Successfully globalized user array item: $globalUserName");
+        }
         _usernameController.clear();
         _passwordController.clear();
 
@@ -310,7 +333,7 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                             ),*/
                             // const SizedBox(height: 8),
                             const SizedBox(height: 25),
-                            /*SizedBox(
+                            SizedBox(
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _login,
@@ -333,8 +356,8 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                                         ),
                                       ),
                               ),
-                            ), */
-                            SizedBox(
+                            ),
+                            /* SizedBox(
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: () {
@@ -359,7 +382,7 @@ class _PeroduaLoginPageState extends State<PeroduaLoginPage> {
                                         ),
                                       ),
                               ),
-                            ),
+                            ), */
                           ],
                         ),
                       ),
