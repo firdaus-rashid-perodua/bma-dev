@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- REVIEW NOTE: android:usesCleartextTraffic is set to false below. 
+         This will block all unsecured HTTP network requests. Ensure all APIs use HTTPS. -->
     <application
         android:label="PRIME GO"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
