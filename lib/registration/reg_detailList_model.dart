@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:test_1/global.dart';
 import 'package:test_1/model/detailListRegionOutlet_model.dart';
 import 'package:test_1/model/detailListRegionSummary_model.dart';
 import 'package:test_1/model/services/Api.dart';
@@ -99,10 +100,10 @@ class _DetailListModelState extends State<DetailListModel> {
       DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
-        name: 'QV-E',
-        actual: 452,
-        target: 367,
-        percentage: 123,
+        name: 'ATIVA',
+        actual: 0,
+        target: 0,
+        percentage: 0,
         status: 'Above Target',
         statusColor: Colors.green,
         isGold: true,
@@ -111,9 +112,9 @@ class _DetailListModelState extends State<DetailListModel> {
         rank: 2,
         medalColor: Colors.grey,
         name: 'AXIA',
-        actual: 380,
-        target: 367,
-        percentage: 104,
+        actual: 0,
+        target: 0,
+        percentage: 0,
         status: 'Above Target',
         statusColor: Colors.green,
         isGold: false,
@@ -158,7 +159,13 @@ class _DetailListModelState extends State<DetailListModel> {
                   (actualCount ?? 0) >= (targetCount ?? 0);
 
               String modelCode = item['MODEL']?.toString() ?? '';
-              final int ackAmount = ackLookupModel[modelCode] ?? 0;
+              int ackAmount = 0;
+              if (globalCurrentMonth == Api.currMonth &&
+                  globalCurrentYear == Api.currYear) {
+                ackAmount = ackLookupModel[modelCode] ?? 0;
+              } else {
+                ackAmount = 0;
+              }
               final int combinedActual = (actualCount ?? 0) + ackAmount;
 
               final regPercentage = (item['REG_PCTG'] as num?)?.toDouble();
@@ -191,7 +198,7 @@ class _DetailListModelState extends State<DetailListModel> {
                   actual: combinedActual,
                   target: targetCount,
                   percentage: (item['REG_PCTG'] as num?)?.toInt(),
-                  status: isAboveTarget ? 'Above Target' : 'Below Target',
+                  status: isAboveTarget ? 'Above\nTarget' : 'Below\nTarget',
                   statusColor: reg_color,
                   isGold: currentRank == 1, // Marks rank #1 as Gold
                   medalColor: currentRank == 1
@@ -799,7 +806,7 @@ class _DetailListModelState extends State<DetailListModel> {
                 child: Text(
                   status,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: statusColor,
                     fontWeight: FontWeight.w500,
                   ),

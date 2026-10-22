@@ -73,7 +73,7 @@ class DashboardData extends ChangeNotifier {
 
   List<RegionModel> modelData = [
     RegionModel(
-      title: 'ATIVA',
+      title: 'ATIVAx',
       percentage: '0%',
       color: Colors.blue,
       actual: 'N/A',
@@ -213,7 +213,8 @@ class DashboardData extends ChangeNotifier {
           row['Model']?.toString() ??
           // row['REGION']?.toString() ??
           'MODEL';
-      String freshActual = _formatNumber(row['ACTUAL_BKG_COUNT']);
+      String freshActual = _formatNumber(row['TOTAL']);
+      // String freshActual = _formatNumber(row['ACTUAL_BKG_COUNT']);
       String freshTarget = _formatNumber(row['TARGET_BKG_COUNT']);
       String freshPctg = '${row['BKG_PCTG_1'] ?? '0.0'}%';
       Color bkg_modelColor = Colors.grey;
@@ -264,6 +265,112 @@ class DashboardData extends ChangeNotifier {
     }
   }
 
+  // Update this to accept both index 3 data (totals) and your maintenance model list data
+  void updateModelFromData2(
+    List<dynamic> fmrTotalsList,
+    List<dynamic> maintenanceModelList,
+    List<dynamic> targetModelList,
+  ) {
+    // 1. Create a quick lookup map for totals by FMR_ID: { "C10114": 7, "C10106": 52, ... }
+    final Map<String, int> fmrTotalMap = {
+      for (var row in fmrTotalsList)
+        row['FMR_ID']?.toString() ?? '':
+            int.tryParse(row['TOTAL']?.toString() ?? '0') ?? 0,
+    };
+
+    final Map<String, int> targetModelMap = {
+      for (var row in targetModelList)
+        row['MODEL']?.toString().toUpperCase() ?? '':
+            int.tryParse(row['TOTAL']?.toString() ?? '0') ?? 0,
+    };
+
+    // 2. Group and Sum totals by vehicle MODEL
+    final Map<String, int> modelAccumulator = {};
+
+    for (var row in maintenanceModelList) {
+      // print(row);
+      String fmrId = row['FMR_ID']?.toString() ?? '';
+      String modelName = row['MODEL']?.toString() ?? 'UNKNOWN';
+
+      // Get the total amount for this FMR_ID (defaults to 0 if not found)
+      int totalForFmr = fmrTotalMap[fmrId] ?? 0;
+
+      // Accumulate the amount into the respective vehicle model group
+      modelAccumulator.update(
+        modelName,
+        (existingTotal) => existingTotal + totalForFmr,
+        ifAbsent: () => totalForFmr,
+      );
+    }
+
+    // print(modelAccumulator);
+
+    // 3. Convert the map entries to a list and SORT from highest to lowest total
+    final sortedEntries =
+        modelAccumulator.entries
+            .where((entry) => entry.value > 0) // <-- THIS DROPS ZERO VALUES
+            .toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+    // 4. Map the aggregated model dictionary into your RegionModel list format for the UI cards
+    final List<RegionModel> newModels = sortedEntries.map((entry) {
+      String displayName = entry.key;
+      int actualTotal = entry.value;
+
+      // Fetch target for this model (defaults to 0 if not found)
+      int targetTotal = targetModelMap[displayName] ?? 0;
+
+      String freshActual = _formatNumber(actualTotal);
+      String freshTarget = _formatNumber(targetTotal);
+
+      // Calculate percentage: (Actual / Target) * 100
+      double pctg = 0.0;
+      if (targetTotal > 0) {
+        pctg = (actualTotal / targetTotal) * 100.0;
+      }
+      String freshPctg = '${pctg.toStringAsFixed(1)}%';
+
+      // Determine card color based on completion percentage
+      Color bkg_modelColor = Colors.grey;
+      if (targetTotal == 0) {
+        bkg_modelColor = Colors.grey;
+      } else if (pctg >= 100.0) {
+        bkg_modelColor = Colors.green; // Excellent
+      } else if (pctg >= 70.0) {
+        bkg_modelColor = Colors.blue; // On Track
+      } else if (pctg >= 50.0) {
+        bkg_modelColor = Color(0xFFE6A100); // Warning / Amber
+      } else if (pctg >= 25.0) {
+        bkg_modelColor = Colors.orange; // Low Performance
+      } else {
+        bkg_modelColor = Colors.red; // Critical
+      }
+
+      return RegionModel(
+        routeType: 'MODEL',
+        title: displayName,
+        regionCode: null,
+        percentage: freshPctg,
+        actual: freshActual,
+        target: freshTarget,
+        color: bkg_modelColor,
+        yoy: '0.0% MTD',
+        yoyColor: Colors.blue,
+        icon: Icons.directions_car,
+      );
+    }).toList();
+
+    // 4. BREAK THE LOOP: Check if the list actually changed before notifying
+    if (modelData.length != newModels.length ||
+        (modelData.isNotEmpty &&
+            modelData.first.actual != newModels.first.actual)) {
+      modelData = newModels;
+
+      // Push the state update safely outside the current layout calculation phase
+      Future.microtask(() => notifyListeners());
+    }
+  }
+
   void setView(bool isRegion) {
     isRegionView = isRegion;
     notifyListeners();
@@ -296,7 +403,10 @@ class BookingScreenState extends State<BookingScreen> {
       Api().get_tgtMntBkg(), // Index 1
       // Api().get_RegionListMntReg(), // Index 2
       Api().get_RegionListMntBkg(), // Index 2
-      Api().get_RegionListMntRegModel(), // Index 3
+      Api().get_mntBkgModelListActual(), // Index 3
+      Api().get_currDate(), // Index 4
+      Api().get_modelMaintenance_fmrid(), // Index 5
+      Api().get_mntBkgModelListTarget(), // Index 6
     ]);
   }
 
@@ -306,6 +416,112 @@ class BookingScreenState extends State<BookingScreen> {
     });
     // Waits for the new future bundle to finish completing before hiding the spinner
     await _apiRequestsFuture;
+  }
+
+  Future<void> _selectMonthYear(BuildContext context) async {
+    int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
+    int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month & Year'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items:
+                          List.generate(
+                                10,
+                                (index) => DateTime.now().year - 5 + index,
+                              )
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text("$year"),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthLabels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          final isSelected = selectedMonth == index + 1;
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                              foregroundColor: isSelected ? Colors.white : null,
+                            ),
+                            onPressed: () {
+                              setDialogState(() => selectedMonth = index + 1);
+                            },
+                            child: Text(monthLabels[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Update the global static state variables!
+                setState(() {
+                  Api.currMonth = selectedMonth.toString().padLeft(2, '0');
+                  Api.currYear = selectedYear.toString();
+
+                  // Re-fetch API data for the newly selected date
+                  _loadData();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -385,6 +601,10 @@ class BookingScreenState extends State<BookingScreen> {
 
         // Real start
         // 3. Fallback default values if the APIs fail or are loading
+        String curr_month_MM = '01';
+        String curr_month_Mmm = 'Jan';
+        String curr_year_YYYY = '1999';
+
         String regActual = '00,000';
         String regTarget = '00,000';
         String remainingTarget = '00,000';
@@ -399,6 +619,27 @@ class BookingScreenState extends State<BookingScreen> {
 
         if (snapshot.hasData) {
           final List<dynamic> responses = snapshot.data!;
+
+          if (responses[4]?['success'] == true &&
+              responses[4]['data'].isNotEmpty) {
+            var dataField = responses[0]['data'];
+            List<dynamic> dataList = [];
+
+            if (dataField is String) {
+              dataList = jsonDecode(dataField);
+            } else if (dataField is List) {
+              dataList = dataField;
+            }
+
+            curr_month_MM = responses[4]['data'][0]['curr_month'] ?? 0;
+            curr_year_YYYY = responses[4]['data'][0]['curr_year'] ?? 0;
+
+            int monthNumber = int.parse(curr_month_MM);
+            int yearNumber = int.parse(curr_year_YYYY);
+            DateTime tempMMMDate = DateTime(yearNumber, monthNumber);
+
+            curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
+          }
 
           if (responses[0]?['success'] == true &&
               responses[0]['data'].isNotEmpty) {
@@ -468,9 +709,18 @@ class BookingScreenState extends State<BookingScreen> {
           if (responses[3]?['success'] == true &&
               responses[3]['data'].isNotEmpty) {
             // PUSH DATA TO YOUR LIST HERE:
-            dashboard.updateModelFromData(responses[3]['data']);
+            // dashboard.updateModelFromData(responses[3]['data']);
+            dashboard.updateModelFromData2(
+              responses[3]['data'],
+              responses[5]['data'],
+              responses[6]['data'],
+            );
           }
         }
+
+        double d_mntRegPctg = 0.0;
+        String s_mntRegPctg = '';
+        Color c_regColor = Colors.grey;
 
         if (regActual != '00,000' && regTarget != '00,000') {
           //
@@ -483,6 +733,22 @@ class BookingScreenState extends State<BookingScreen> {
           remainingTarget = NumberFormat.decimalPattern().format(
             raw_remainingTarget,
           );
+
+          //calculate percentage daus
+          d_mntRegPctg = (raw_regActual / raw_regTarget) * 100;
+          s_mntRegPctg = d_mntRegPctg.toStringAsFixed(1);
+
+          if (d_mntRegPctg > 99) {
+            c_regColor = Colors.green;
+          } else if (d_mntRegPctg > 70) {
+            c_regColor = Colors.blue;
+          } else if (d_mntRegPctg > 50) {
+            c_regColor = Colors.yellow;
+          } else if (d_mntRegPctg > 25) {
+            c_regColor = Colors.orange;
+          } else {
+            c_regColor = Colors.red;
+          }
         }
 
         return Scaffold(
@@ -583,6 +849,11 @@ class BookingScreenState extends State<BookingScreen> {
                     ],
                   ),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.access_time),
+                  title: Text('${curr_month_Mmm} ' + Api.currYear),
+                  onTap: () => _selectMonthYear(context),
+                ),
                 /*ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
@@ -624,6 +895,7 @@ class BookingScreenState extends State<BookingScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
+                      // color: Color.fromRGBO(252, 245, 230, 0.5),
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
@@ -640,7 +912,7 @@ class BookingScreenState extends State<BookingScreen> {
                       children: [
                         Center(
                           child: Text(
-                            'BOOKING',
+                            'BOOKING [ ${curr_month_Mmm.toUpperCase()} ]',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -679,28 +951,27 @@ class BookingScreenState extends State<BookingScreen> {
                                   width: 90,
                                   height: 90,
                                   child: CircularProgressIndicator(
-                                    value: 1.029,
+                                    value: d_mntRegPctg / 100,
                                     strokeWidth: 8,
                                     backgroundColor: Colors.grey[200],
-                                    valueColor:
-                                        const AlwaysStoppedAnimation<Color>(
-                                          Colors.green,
-                                        ),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      c_regColor,
+                                    ),
                                   ),
                                 ),
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text(
-                                      '102.9%',
+                                    Text(
+                                      '$s_mntRegPctg%',
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.green,
+                                        color: c_regColor,
                                       ),
                                     ),
-                                    const Text(
-                                      'of 30,500',
+                                    Text(
+                                      'of $regTarget',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey,
@@ -715,16 +986,16 @@ class BookingScreenState extends State<BookingScreen> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.arrow_upward,
-                              color: Colors.green,
+                              color: c_regColor,
                               size: 18,
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              '102.9% of target achieved',
+                            Text(
+                              '$s_mntRegPctg% of target achieved',
                               style: TextStyle(
-                                color: Colors.green,
+                                color: c_regColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -735,11 +1006,11 @@ class BookingScreenState extends State<BookingScreen> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: 0.228,
+                            value: d_mntRegPctg / 100,
                             minHeight: 8,
                             backgroundColor: Colors.grey[200],
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.green,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              c_regColor,
                             ),
                           ),
                         ),
@@ -784,66 +1055,6 @@ class BookingScreenState extends State<BookingScreen> {
                     ],
                   ),
 
-                  /*Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Region',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.directions_car,
-                                color: Colors.grey,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Model',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),*/
                   const SizedBox(height: 24),
 
                   // Region Cards Grid
@@ -866,6 +1077,7 @@ class BookingScreenState extends State<BookingScreen> {
                               'title': 'Booking',
                               'region_name': item.title,
                               'region_code': item.regionCode,
+                              'model_name': item.title,
                             };
 
                             if (item.routeType == 'REGION') {
@@ -875,11 +1087,11 @@ class BookingScreenState extends State<BookingScreen> {
                                 arguments: routeArgs,
                               );
                             } else if (item.routeType == 'MODEL') {
-                              // Navigator.pushNamed(
-                              //   context,
-                              //   '/bkgdetaillistModel',
-                              //   arguments: routeArgs,
-                              // );
+                              Navigator.pushNamed(
+                                context,
+                                '/bkgdetaillistVariantAll',
+                                arguments: routeArgs,
+                              );
                               null;
                             } else {
                               Navigator.pushNamed(
@@ -974,7 +1186,7 @@ class BookingScreenState extends State<BookingScreen> {
                   const SizedBox(height: 24),
 
                   // Last Updated
-                  Center(
+                  /* Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -993,6 +1205,7 @@ class BookingScreenState extends State<BookingScreen> {
                   ),
 
                   const SizedBox(height: 80), // Space for bottom nav
+                  */
                 ],
               ),
             ),

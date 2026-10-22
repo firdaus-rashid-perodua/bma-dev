@@ -248,7 +248,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
     ];
 
     List<DealerItemModel> regionListDataOutlet = [
-      DealerItemModel(
+      /*DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
         name: 'Motors Confidence (S) Sdn Bhd',
@@ -300,7 +300,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
         percentage: 70,
         status: 'Below Target',
         statusColor: Colors.orange,
-      ),
+      ),*/
     ];
 
     return FutureBuilder(
@@ -314,6 +314,10 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
         String curr_month_MM = '01';
         String curr_month_Mmm = 'Jan';
         String curr_year_YYYY = '1999';
+
+        int i_avgAcheivement = 0;
+        int i_ttlDealer_cnt = 0;
+        int i_bkgPercentage = 0;
 
         // 1. If the API is still downloading data, keep displaying your initial mock data
         if (snapshot.hasData) {
@@ -364,7 +368,13 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                   (actualCount ?? 0) >= (targetCount ?? 0);
 
               final bkgPercentage = (item['BKG_PCTG'] as num?)?.toDouble();
+              i_bkgPercentage =
+                  i_bkgPercentage + ((item['BKG_PCTG'] as num?)?.toInt() ?? 0);
+
               Color bkg_color = Colors.grey;
+
+              i_ttlDealer_cnt = i + 1;
+              i_avgAcheivement = i_bkgPercentage ~/ i_ttlDealer_cnt;
 
               if (bkgPercentage != null) {
                 if (bkgPercentage > 99.9) {
@@ -393,7 +403,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                   actual: actualCount,
                   target: targetCount,
                   percentage: (item['BKG_PCTG'] as num?)?.toInt(),
-                  status: isAboveTarget ? 'Above Target' : 'Below Target',
+                  status: isAboveTarget ? 'Above\nTarget' : 'Below\nTarget',
                   statusColor: bkg_color,
                   isGold: currentRank == 1, // Marks rank #1 as Gold
                   medalColor: currentRank == 1
@@ -657,7 +667,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                               icon: Icons.people,
                               color: Colors.blue,
                               title: 'Total\nDealers',
-                              value: '$total_performed_outlets',
+                              value: '$i_ttlDealer_cnt',
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -667,7 +677,8 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                               color: Colors.green,
                               title: 'Average Achievement',
                               // value: '$average_achievement_pctg%',
-                              value: 'N/A',
+                              // value: 'N/A',
+                              value: '$i_avgAcheivement%',
                             ),
                           ),
                           /* const SizedBox(width: 8),
@@ -886,13 +897,13 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
     return GestureDetector(
       //onTap: model.onTap,
       onTap: () {
-        null;
-        // Navigator.pushNamed(
-        //   context,
-        //   '/bkgdetaillistModel',
-        //   arguments:
-        //       model, // Sends all fields (name, actual, target, etc.) together
-        // );
+        // null;
+        Navigator.pushNamed(
+          context,
+          '/bkgdetaillistModel',
+          arguments:
+              model, // Sends all fields (name, actual, target, etc.) together
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -1058,7 +1069,7 @@ class _DetailListRegionBkgState extends State<DetailListRegionBkg> {
                 child: Text(
                   '$status',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: statusColor,
                     fontWeight: FontWeight.w500,
                   ),

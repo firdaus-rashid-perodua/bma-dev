@@ -21,7 +21,8 @@ class DetailListRegion extends StatefulWidget {
 class _DetailListRegionState extends State<DetailListRegion> {
   late Future<List<dynamic>> _apiReqFutureRegionList;
   bool _isInitialized = false; // Prevents multiple API calls
-  String regionCode = 'Region Code'; // Store at class level to access anywhere
+  late String regionCode =
+      'Region Code'; // Store at class level to access anywhere
   //Point your chip text shortcuts directly to your new utility helper:
   String get displayRegionName => FilterUtils.getDisplayRegionName(regionCode);
 
@@ -41,7 +42,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
     if (!_isInitialized) {
       final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, String?>;
-      regionCode = args['region_code'] ?? 'Region Code 2';
+      regionCode = args['region_code'] ?? 'REGION';
 
       _fetchRegionData(); // Fetch initially
       _isInitialized = true;
@@ -80,7 +81,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
     return lookup;
   }
 
-  Future<void> _selectMonthYear(BuildContext context) async {
+  /* Future<void> _selectMonthYear(BuildContext context) async {
     int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
     int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
 
@@ -181,9 +182,9 @@ class _DetailListRegionState extends State<DetailListRegion> {
         );
       },
     );
-  }
+  } */
 
-  Future<void> _selectRegion(BuildContext context) async {
+  /*Future<void> _selectRegion(BuildContext context) async {
     // Define your region options mapping [Display Name : Backend Code]
     final Map<String, String> regions = {
       'Central 1': 'C1',
@@ -248,7 +249,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
         );
       },
     );
-  }
+  }*/
 
   @override
   /*void initState() {
@@ -264,9 +265,9 @@ class _DetailListRegionState extends State<DetailListRegion> {
 
     final String title = args['title'] ?? 'Default Title';
     final String region = args['region_name'] ?? 'Default Region';
-    final String regionCode = args['region_code'] ?? 'Region Code';
+    // String regionCode = args['region_code'] ?? 'Region Code';
 
-    print('Pass data region: $regionCode');
+    print('Current region: $regionCode');
 
     // List outlets
     List<SummaryCardModel> regionListDataSummary = [
@@ -279,7 +280,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
     ];
 
     List<DealerItemModel> regionListDataOutlet = [
-      DealerItemModel(
+      /*DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
         name: 'Motors Confidence (S) Sdn Bhd',
@@ -331,7 +332,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
         percentage: 70,
         status: 'Below Target',
         statusColor: Colors.orange,
-      ),
+      ),*/
     ];
 
     return FutureBuilder(
@@ -403,7 +404,13 @@ class _DetailListRegionState extends State<DetailListRegion> {
 
                 // 🔹 O(1) lookup instead of parsing a nested per-outlet response
                 final String outletCode = item['OUTLET_CODE']?.toString() ?? '';
-                final int ackAmount = ackLookup[outletCode] ?? 0;
+                int ackAmount = 0;
+                if (globalCurrentMonth == Api.currMonth &&
+                    globalCurrentYear == Api.currYear) {
+                  ackAmount = ackLookup[outletCode] ?? 0;
+                } else {
+                  ackAmount = 0;
+                }
 
                 final int combinedActual = (actualCount ?? 0) + ackAmount;
                 final bool isAboveTarget = combinedActual >= (targetCount ?? 0);
@@ -433,7 +440,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
                     actual: combinedActual,
                     target: targetCount,
                     percentage: (item['REG_PCTG'] as num?)?.toInt(),
-                    status: isAboveTarget ? 'Above Target' : 'Below Target',
+                    status: isAboveTarget ? 'Above\nTarget' : 'Below\nTarget',
                     statusColor: reg_color,
                     isGold: currentRank == 1,
                     medalColor: currentRank == 1
@@ -521,9 +528,22 @@ class _DetailListRegionState extends State<DetailListRegion> {
                     const SizedBox(width: 8),
                     // _buildFilterChip('$region', Icons.location_on),
                     GestureDetector(
-                      onTap: () => _selectRegion(context),
+                      // onTap: () => _selectRegion(context),
+                      onTap: () async {
+                        await FilterUtils.selectRegion(
+                          context: context,
+                          currentRegionCode: regionCode,
+                          onRegionSelected: (selectedRegion) {
+                            print('selectedRegion: $selectedRegion');
+                            if (!mounted) return;
+                            setState(() {
+                              regionCode = selectedRegion;
+                            });
+                            _fetchRegionData();
+                          },
+                        );
+                      },
                       child: _buildFilterChip(
-                        // '$regionCode',
                         '$displayRegionName',
                         Icons.location_on,
                       ), // Shows selected region text
@@ -532,7 +552,25 @@ class _DetailListRegionState extends State<DetailListRegion> {
 
                     // Make your chip clickable:
                     GestureDetector(
-                      onTap: () => _selectMonthYear(context),
+                      // onTap: () => _selectMonthYear(context),
+                      onTap: () async {
+                        await FilterUtils.selectMonthYear(
+                          context: context,
+                          onDateSelected: () {
+                            if (!mounted) return;
+
+                            setState(() {
+                              curr_month_Mmm = DateFormat('MMM').format(
+                                DateTime(
+                                  int.parse(Api.currYear),
+                                  int.parse(Api.currMonth),
+                                ),
+                              );
+                            });
+                            _fetchRegionData();
+                          },
+                        );
+                      },
                       child: _buildFilterChip(
                         '$curr_month_Mmm $curr_year_YYYY',
                         Icons.table_chart,
@@ -1000,7 +1038,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
                 child: Text(
                   '$status',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: statusColor,
                     fontWeight: FontWeight.w500,
                   ),

@@ -4,6 +4,7 @@ class RegionModel {
   final String? routeType;
   final String title;
   final String? regionCode;
+  final String? outletCode;
   final String percentage;
   final Color color;
   final String actual;
@@ -17,6 +18,7 @@ class RegionModel {
     this.routeType,
     required this.title,
     this.regionCode,
+    this.outletCode,
     required this.percentage,
     required this.color,
     required this.actual,

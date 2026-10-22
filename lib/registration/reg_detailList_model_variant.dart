@@ -73,7 +73,7 @@ class _DetailListVariantState extends State<DetailListVariant> {
         statusColor: Colors.green,
         isGold: false,
       ), */
-      DealerItemModel(
+      /* DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
         name: 'AXIA - 1000H (CVT)',
@@ -94,7 +94,7 @@ class _DetailListVariantState extends State<DetailListVariant> {
         status: 'Above Target',
         statusColor: Colors.green,
         isGold: false,
-      ),
+      ), */
     ];
 
     return FutureBuilder(

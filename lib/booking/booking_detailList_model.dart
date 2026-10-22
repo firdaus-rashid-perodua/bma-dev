@@ -76,10 +76,10 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
       DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
-        name: 'QV-E',
-        actual: 452,
-        target: 367,
-        percentage: 123,
+        name: 'ATIVA',
+        actual: 0,
+        target: 0,
+        percentage: 0,
         status: 'Above Target',
         statusColor: Colors.green,
         isGold: true,
@@ -88,9 +88,9 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
         rank: 2,
         medalColor: Colors.grey,
         name: 'AXIA',
-        actual: 380,
-        target: 367,
-        percentage: 104,
+        actual: 0,
+        target: 0,
+        percentage: 0,
         status: 'Above Target',
         statusColor: Colors.green,
         isGold: false,
@@ -112,6 +112,11 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
         String curr_month_Mmm = 'Jan';
         String curr_year_YYYY = '1999';
 
+        int i_avgAcheivement = 0;
+        int i_ttlModel_cnt = 0;
+        int i_bkgPercentage = 0;
+        String s_lastModel = 'N/A';
+
         if (snapshot.hasData) {
           final List<dynamic> responses = snapshot.data!;
 
@@ -125,12 +130,42 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
               final int currentRank = i + 1;
 
               // Safe numeric conversions from JSON types (ints/doubles)
-              final int? actualCount = (item['ACTUAL_REG_COUNT'] as num?)
+              final int? actualCount = (item['ACTUAL_BKG_COUNT'] as num?)
                   ?.toInt();
-              final int? targetCount = (item['TARGET_REG_COUNT'] as num?)
+              final int? targetCount = (item['TARGET_BKG_COUNT'] as num?)
                   ?.toInt();
               final bool isAboveTarget =
                   (actualCount ?? 0) >= (targetCount ?? 0);
+
+              final bkgPercentage = (item['BKG_PCTG'] as num?)?.toDouble();
+              i_bkgPercentage =
+                  i_bkgPercentage + ((item['BKG_PCTG'] as num?)?.toInt() ?? 0);
+
+              i_ttlModel_cnt = i + 1;
+              i_avgAcheivement = i_bkgPercentage ~/ i_ttlModel_cnt;
+
+              s_lastModel = item['MODEL'] as String;
+
+              Color bkg_color = Colors.grey;
+
+              if (bkgPercentage != null) {
+                if (bkgPercentage > 99.9) {
+                  bkg_color = Colors.green;
+                } else if (bkgPercentage > 69.9) {
+                  // 💡 Added variable name back in
+                  bkg_color = Colors.blue;
+                } else if (bkgPercentage > 49.9) {
+                  bkg_color = const Color(
+                    0xFFE6A100,
+                  ); // Added 'const' for performance optimization
+                } else if (bkgPercentage > 24.9) {
+                  bkg_color = Colors.orange;
+                } else {
+                  bkg_color = Colors.red;
+                }
+              } else {
+                bkg_color = Colors.grey;
+              }
 
               parsedItems.add(
                 DealerItemModel(
@@ -139,9 +174,9 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                   outletCode: item['OUTLET_CODE'] as String?,
                   actual: actualCount,
                   target: targetCount,
-                  percentage: (item['REG_PCTG'] as num?)?.toInt(),
-                  status: isAboveTarget ? 'Above Target' : 'Below Target',
-                  statusColor: isAboveTarget ? Colors.green : Colors.red,
+                  percentage: (item['BKG_PCTG'] as num?)?.toInt(),
+                  status: isAboveTarget ? 'Above\nTarget' : 'Below\nTarget',
+                  statusColor: bkg_color,
                   isGold: currentRank == 1, // Marks rank #1 as Gold
                   medalColor: currentRank == 1
                       ? Colors.amber
@@ -163,7 +198,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
               //
               // total_gu_summary = responses[1]['data'][0]['TOTAL_ROWS'].toString() ?? '';
               average_achievement_pctg_summary =
-                  responses[1]['data'][0]['AVERAGE_REG_PCTG'].toString() ?? '';
+                  responses[1]['data'][0]['AVERAGE_BKG_PCTG'].toString() ?? '';
               need_attention_summary =
                   responses[1]['data'][0]['LOWEST_MODEL'].toString() ?? '';
             }
@@ -413,7 +448,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                               color: Colors.green,
                               title: 'Average Achievement',
                               // value: '92%',
-                              value: '$average_achievement_pctg_summary%',
+                              value: '$i_avgAcheivement%',
                             ),
                           ),
                           /*const SizedBox(width: 8),
@@ -433,7 +468,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                               color: Colors.red,
                               title: 'Need Attention',
                               // value: 'Ativa',
-                              value: '$need_attention_summary',
+                              value: '$s_lastModel',
                               //value: '-',
                               //subtitle: 'Dealers',
                             ),
@@ -850,7 +885,7 @@ class _DetailListModelBkgState extends State<DetailListModelBkg> {
                 child: Text(
                   status,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: statusColor,
                     fontWeight: FontWeight.w500,
                   ),

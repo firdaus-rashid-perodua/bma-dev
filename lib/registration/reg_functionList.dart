@@ -32,22 +32,26 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void initState() {
     super.initState();
-    // _apiRequestsFuture = Future.wait([
-    //   Api().get_actMntReg(), // Index 0
-    //   Api().get_tgtMntReg(), // Index 1
-    //   Api().get_currDate(), // Index 2
-    // ]);
     _fetchData();
   }
 
   // Helper method to fetch/refresh API data when the month or year changes
   void _fetchData() {
     _apiRequestsFuture = Future.wait([
-      Api().get_actMntReg(),
-      Api().get_tgtMntReg(),
-      Api().get_currDate(),
-      Api().get_ackReg(),
+      Api().get_actMntReg(), // Index 0
+      Api().get_tgtMntReg(), // Index 1
+      Api().get_currDate(), // Index 2
+      // Api().get_ackReg(), // temp // Index 3
+      Api().get_AckRegistration(), // Index 3
     ]);
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _fetchData(); // Triggers a reload of your data blueprints
+    });
+    // Waits for the new future bundle to finish completing before hiding the spinner
+    await _apiRequestsFuture;
   }
 
   Future<void> _selectMonthYear(BuildContext context) async {
@@ -473,117 +477,121 @@ class _DetailPageState extends State<DetailPage> {
               ],
             ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Date Header
-                InkWell(
-                  onTap: () => _selectMonthYear(context),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        // '$displayMonth $displayYear',
-                        '$curr_month_Mmm $curr_year_YYYY',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+          body: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date Header
+                  InkWell(
+                    onTap: () => _selectMonthYear(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          // '$displayMonth $displayYear',
+                          '$curr_month_Mmm $curr_year_YYYY',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.access_time, color: Colors.grey),
-                    ],
+                        const SizedBox(width: 8),
+                        const Icon(Icons.access_time, color: Colors.grey),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Yearly Target
-                /*_buildTargetCard(
-                  iconColor: const Color(0xFF4CAF50),
-                  title: 'Yearly target',
-                  subtitle: '2026',
-                  actual: '82,198',
-                  target: '360,000',
-                  percentage: '22%',
-                  circleColor: const Color(0xFF9CCC65),
-                  circleTextColor: Colors.black,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      //MaterialPageRoute(builder: (context) => HomePage()),
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            // DetailList(title: '$title - Yearly target'),
-                            RegistrationsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                */
+                  // Yearly Target
+                  /*_buildTargetCard(
+                    iconColor: const Color(0xFF4CAF50),
+                    title: 'Yearly target',
+                    subtitle: '2026',
+                    actual: '82,198',
+                    target: '360,000',
+                    percentage: '22%',
+                    circleColor: const Color(0xFF9CCC65),
+                    circleTextColor: Colors.black,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        //MaterialPageRoute(builder: (context) => HomePage()),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              // DetailList(title: '$title - Yearly target'),
+                              RegistrationsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  */
 
-                // Monthly Target
-                _buildTargetCard(
-                  iconColor: const Color(0xFF4CAF50),
-                  title: 'Monthly target',
-                  subtitle: '$curr_month_Mmm $curr_year_YYYY',
-                  actual: regActual,
-                  target: regTarget,
-                  percentage: '$regPcntge%',
-                  circleColor: reg_color,
-                  circleTextColor: Colors.black,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      //MaterialPageRoute(builder: (context) => HomePage()),
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            // DetailList(title: '$title - Monthly target'),
-                            // RegistrationsScreen(),
-                            RegistrationAppWrapper(),
-                      ),
-                    );
-                    /*Navigator.pushNamed(
-                                localContext, // Uses the fresh localContext to trace routes safely
-                                '/detailpage2',
-                                arguments: {
-                                  'title': 'Registration',
-                                  'month': 'May',
-                                  'year': '2026',
-                                },
-                              );
-                            },*/
-                  },
-                ),
-                const SizedBox(height: 16),
+                  // Monthly Target
+                  _buildTargetCard(
+                    iconColor: const Color(0xFF4CAF50),
+                    title: 'Monthly target',
+                    subtitle: '$curr_month_Mmm $curr_year_YYYY',
+                    actual: regActual,
+                    target: regTarget,
+                    percentage: '$regPcntge%',
+                    circleColor: reg_color,
+                    circleTextColor: Colors.black,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        //MaterialPageRoute(builder: (context) => HomePage()),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              // DetailList(title: '$title - Monthly target'),
+                              // RegistrationsScreen(),
+                              RegistrationAppWrapper(),
+                        ),
+                      );
+                      /*Navigator.pushNamed(
+                                  localContext, // Uses the fresh localContext to trace routes safely
+                                  '/detailpage2',
+                                  arguments: {
+                                    'title': 'Registration',
+                                    'month': 'May',
+                                    'year': '2026',
+                                  },
+                                );
+                              },*/
+                    },
+                  ),
+                  const SizedBox(height: 16),
 
-                /*// Over last month
-                _buildComparisonCard(
-                  title: 'Over last month',
-                  subtitle: 'May 2026 vs May 2025',
-                  currentLabel: "May'26",
-                  currentValue: '7,076',
-                  previousLabel: "Apr'26",
-                  previousValue: '26,127',
-                  difference: '-19,051',
-                  circleColor: const Color(0xFF81D4FA),
-                ),
-                const SizedBox(height: 16),
-        
-                // Over last year
-                _buildComparisonCard(
-                  title: 'Over last year',
-                  subtitle: 'May 2026 vs May 2025',
-                  currentLabel: "May'26",
-                  currentValue: '7,076',
-                  previousLabel: "May'25",
-                  previousValue: '21,540',
-                  difference: '-14,464',
-                  circleColor: const Color(0xFF81C784),
-                ),*/
-              ],
+                  /*// Over last month
+                  _buildComparisonCard(
+                    title: 'Over last month',
+                    subtitle: 'May 2026 vs May 2025',
+                    currentLabel: "May'26",
+                    currentValue: '7,076',
+                    previousLabel: "Apr'26",
+                    previousValue: '26,127',
+                    difference: '-19,051',
+                    circleColor: const Color(0xFF81D4FA),
+                  ),
+                  const SizedBox(height: 16),
+                    
+                  // Over last year
+                  _buildComparisonCard(
+                    title: 'Over last year',
+                    subtitle: 'May 2026 vs May 2025',
+                    currentLabel: "May'26",
+                    currentValue: '7,076',
+                    previousLabel: "May'25",
+                    previousValue: '21,540',
+                    difference: '-14,464',
+                    circleColor: const Color(0xFF81C784),
+                  ),*/
+                ],
+              ),
             ),
           ),
         );

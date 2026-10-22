@@ -70,7 +70,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
     ];
 
     List<DealerItemModel> regionListDataOutlet = [
-      DealerItemModel(
+      /*DealerItemModel(
         rank: 1,
         medalColor: Colors.amber,
         name: 'Motors Confidence (S) Sdn Bhd',
@@ -122,7 +122,7 @@ class _DetailListRegionState extends State<DetailListRegion> {
         percentage: 70,
         status: 'Below Target',
         statusColor: Colors.orange,
-      ),
+      ),*/
     ];
 
     return FutureBuilder(

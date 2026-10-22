@@ -12,8 +12,8 @@ class FilterUtils {
         return 'Central 1';
       case 'C2':
         return 'Central 2';
-      case 'East Coast 1':
-        return 'Central 1';
+      case 'EC1':
+        return 'East Coast 1';
       case 'EC2':
         return 'East Coast 2';
       case 'EM':
@@ -150,7 +150,7 @@ class FilterUtils {
       'East Malaysia': 'EM',
       'Northern': 'N',
       'Southern': 'S',
-      'FMD': 'FMD',
+      // 'FMD': 'FMD',
     };
 
     await showModalBottomSheet(
@@ -175,6 +175,7 @@ class FilterUtils {
               ...regions.keys.map((String key) {
                 final isSelected =
                     currentRegionCode.toUpperCase() == regions[key];
+                print('isSelected: $isSelected');
                 return ListTile(
                   title: Text(
                     key,

@@ -1,4 +1,4 @@
 {
-    "API_BASE_URL": "http://10.209.8.87/api/",
-    "API_LDAP_URL": "http://10.209.8.87/"
+    "API_BASE_URL": "http://10.34.163.87:5000/api/",
+    "API_LDAP_URL": "http://10.34.163.87:5000/"
 }

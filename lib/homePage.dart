@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:test_1/global.dart';
 import 'package:test_1/model/services/Api.dart';
 import 'registration/reg_functionList.dart';
+import 'package:test_1/utils/filter_utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,13 +33,11 @@ class _HomePageState extends State<HomePage> {
       Api().get_tgtMntReg(), // Index 1
       Api().get_actYearReg(), // Index 2
       Api.get_tgtYearReg(), // Index 3
-      //Api.get_actMntBook(), // Index 4
-      //Api.get_tgtMntBook(), // Index 5
       Api().get_actMntBkg(), // Index 4
       Api().get_tgtMntBkg(), // Index 5
       Api().get_AckRegistration(), // Index 6
       Api().get_userACL(), // Index 7
-      Api().get_ackReg(), // Index 8
+      Api().get_ackReg(), // Index 8 // Temp data in replace for no 6
       Api().get_currDate(), // Index 9
     ]);
   }
@@ -51,7 +50,8 @@ class _HomePageState extends State<HomePage> {
     await _apiRequestsFuture;
   }
 
-  Future<void> _selectMonthYear(BuildContext context) async {
+  // Moved to filter_utils.dart
+  /* Future<void> _selectMonthYear(BuildContext context) async {
     int selectedYear = int.tryParse(Api.currYear) ?? DateTime.now().year;
     int selectedMonth = int.tryParse(Api.currMonth) ?? DateTime.now().month;
 
@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
-  }
+  } */
 
   Widget build(BuildContext context) {
     final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -231,10 +231,73 @@ class _HomePageState extends State<HomePage> {
         String curr_month_Mmm = 'Jan';
         String curr_year_YYYY = '1999';
 
+        // ------NEW PARAMETER---------------------------
+        var api_datafield_yearRegAct;
+        var api_datafield_yearRegTgt;
+        var api_datafield_mntRegAct;
+        var api_datafield_mntRegTgt;
+        var api_datafield_ack;
+        var api_datafield_mntBkgAct;
+        var api_datafield_mntBkgTgt;
+
+        List<dynamic> list_yearRegActual = [];
+        List<dynamic> list_yearRegTarget = [];
+        List<dynamic> list_mntRegActual = [];
+        List<dynamic> list_mntRegTarget = [];
+        List<dynamic> list_ack = [];
+        List<dynamic> list_mntBkgActual = [];
+        List<dynamic> list_mntBkgTarget = [];
+
+        // Registration
+        String s_regActual_yearly = '00,000';
+        String s_regTarget_yearly = '00,000';
+        String s_regActual_mntly = '00,000';
+        String s_regTarget_mntly = '00,000';
+        String s_regPctg_yearly = '0';
+        String s_regPctg_mntly = '0';
+        String s_regRemaining_yearly = '0';
+        String s_regShortage = '00.0k';
+        String s_regShortageText = 'N/A';
+
+        int i_regAck = 0;
+        int i_regAck_yearly = 0;
+        int i_regActual_yearly = 0;
+        int i_regActual_mntly = 0;
+        int i_regTarget_yearly = 0;
+        int i_regTarget_mntly = 0;
+        int i_regRemaining_yearly = 0;
+        int i_regPctg_mntly = 0;
+        int i_regShortage = 0;
+
+        double d_regPctg_yearly = 0.0;
+
+        Color c_regColor = Colors.red;
+        Color c_regShortageColor = Colors.grey;
+
+        //
+        //
+        // Booking
+        String s_bkgActual_mntly = '00,000';
+        String s_bkgTarget_mntly = '00,000';
+        String s_bkgPctg_mntly = '0';
+        String s_bkgShortage = '00.0k';
+        String s_bkgShortageText = 'N/A';
+
+        int i_bkgActual_mntly = 0;
+        int i_bkgTarget_mntly = 0;
+        int i_bkgPctg_mntly = 0;
+        int i_bkgShortage = 0;
+
+        Color c_bkgColor = Colors.red;
+        Color c_bkgShortageColor = Colors.grey;
+
+        /// END new parameter
+
         // daily ACK amount
         String regACK = '0';
         int rawRegACK = 0;
         int rawRegACK_forYear = 0;
+        int rawRegActual_Ack = 0;
 
         // Registration yearly
         String regActYearly = '00,000';
@@ -261,6 +324,7 @@ class _HomePageState extends State<HomePage> {
         int rawRegtarget = 0;
         int regPcntge = 0;
         int rawRegShortage = 0;
+        String rawRegactual_str = '';
         // double regPcntge = 0.0;   // if need decimal
 
         // Booking monthly
@@ -322,226 +386,310 @@ class _HomePageState extends State<HomePage> {
             DateTime tempMMMDate = DateTime(yearNumber, monthNumber);
 
             curr_month_Mmm = DateFormat('MMM').format(tempMMMDate);
-
-            print("Current month MM: $curr_month_MM");
-            print("Current month MMM: $curr_month_Mmm");
-            print("Current year YYYY: $curr_year_YYYY");
           }
 
           // Registration monthly math logic START
           // Get today ack value
-          print('Global Date Month: ' + globalCurrentMonth);
-          print('Global Date Year: ' + globalCurrentYear);
-          print('Query Date Month: ' + Api.currMonth);
-          print('Query Date Year: ' + Api.currYear);
+          // print('Global Date Month: ' + globalCurrentMonth);
+          // print('Global Date Year: ' + globalCurrentYear);
+          // print('Query Date Month: ' + Api.currMonth);
+          // print('Query Date Year: ' + Api.currYear);
 
-          if (responses[8]?['success'] == true &&
-              responses[8]['data'].isNotEmpty) {
-            //
-            if (globalCurrentMonth == Api.currMonth &&
-                globalCurrentYear == Api.currYear) {
-              rawRegACK = responses[8]['data'][0]['AMOUNT'] ?? 0;
-              regACK = responses[8]['data'][0]['AMOUNT'].toString() ?? '0';
-            }
-            if (globalCurrentYear == Api.currYear) {
-              rawRegACK_forYear = responses[8]['data'][0]['AMOUNT'] ?? 0;
-            }
-          }
-
-          // Parse Registration Month Actual (Index 0)
+          // Store API data in list variable
+          // Api().get_actMntReg() - Index 0
           if (responses[0]?['success'] == true &&
               responses[0]['data'].isNotEmpty) {
-            // declare dataField for registrations
-            var dataField = responses[0]['data'];
+            // Create a datafield list
+            api_datafield_mntRegAct = responses[0]['data'] ?? [];
 
-            // declare list
-            List<dynamic> dataList = [];
-
-            // If the API return data as a String string, decode it. Otherwise, cast it and assign it to dataList
-            if (dataField is String) {
-              dataList = jsonDecode(dataField);
-            } else if (dataField is List) {
-              dataList = dataField;
-            }
-
-            // Ensure the list is not empty before accessing index 0
-            if (dataList.isNotEmpty) {
-              var rawValue = dataList[0]['total_reg_month'];
-              // add ack
-              rawValue = rawValue + rawRegACK;
-              final parsedValue = int.tryParse(rawValue?.toString() ?? '') ?? 0;
-
-              regMntActual = NumberFormat.decimalPattern().format(parsedValue);
-
-              if (regMntActual == '0') {
-                regMntActual = '00,000';
-              }
+            // Convert datafield to list
+            if (api_datafield_mntRegAct is String) {
+              list_mntRegActual = jsonDecode(api_datafield_mntRegAct);
+            } else if (api_datafield_mntRegAct is List) {
+              list_mntRegActual = api_datafield_mntRegAct;
             }
           }
 
-          // Parse Registration Month Target (Index 1)
+          // Api().get_tgtMntReg() - Index 1
           if (responses[1]?['success'] == true &&
               responses[1]['data'].isNotEmpty) {
-            regMntTarget = NumberFormat.decimalPattern().format(
-              responses[1]['data'][0]['target_reg_month'] ?? 0,
-            );
-            if (regMntTarget == '0') {
-              regMntTarget = '00,000';
+            api_datafield_mntRegTgt = responses[1]['data'] ?? [];
+
+            // Convert datafield to list
+            if (api_datafield_mntRegTgt is String) {
+              list_mntRegTarget = jsonDecode(api_datafield_mntRegTgt);
+            } else if (api_datafield_mntRegTgt is List) {
+              list_mntRegTarget = api_datafield_mntRegTgt;
             }
           }
 
-          if (regMntActual != '00,000' && regMntTarget != '00,000') {
-            rawRegactual = responses[0]['data'][0]['total_reg_month'] ?? 0;
-            rawRegtarget = responses[1]['data'][0]['target_reg_month'] ?? 0;
+          // Api().get_AckRegistration() - Index 6
+          if (responses[6]?['success'] == true &&
+              responses[6]['data'].isNotEmpty) {
+            api_datafield_ack = responses[6]['data'] ?? [];
 
-            // calculate percentage
-            regPcntge = (rawRegactual * 100) ~/ rawRegtarget;
+            // Convert datafield to list
+            if (api_datafield_ack is String) {
+              list_ack = jsonDecode(api_datafield_ack);
+            } else if (api_datafield_ack is List) {
+              list_ack = api_datafield_ack;
+            }
+          }
 
-            if (regPcntge > 99) {
-              reg_color = Colors.green;
-            } else if (regPcntge > 70) {
-              reg_color = Colors.blue;
-            } else if (regPcntge > 50) {
-              reg_color = Colors.yellow;
-            } else if (regPcntge > 25) {
-              reg_color = Colors.orange;
-            } else {
-              reg_color = Colors.red;
+          // Api().get_actYearReg() - Index 2
+          if (responses[2]?['success'] == true &&
+              responses[2]['data'].isNotEmpty) {
+            api_datafield_yearRegAct = responses[2]['data'] ?? [];
+            // print('year_act_api');
+            // print(api_datafield_yearRegAct);
+
+            // Convert datafield to list
+            if (api_datafield_yearRegAct is String) {
+              list_yearRegActual = jsonDecode(api_datafield_yearRegAct);
+            } else if (api_datafield_yearRegAct is List) {
+              list_yearRegActual = api_datafield_yearRegAct;
+            }
+          }
+
+          // Api.get_tgtYearReg() - Index 3
+          if (responses[3]?['success'] == true &&
+              responses[3]['data'].isNotEmpty) {
+            api_datafield_yearRegTgt = responses[3]['data'];
+
+            // Convert datafield to list
+            if (api_datafield_yearRegTgt is String) {
+              list_yearRegTarget = jsonDecode(api_datafield_yearRegTgt);
+            } else if (api_datafield_yearRegTgt is List) {
+              list_yearRegTarget = api_datafield_yearRegTgt;
+            }
+          }
+
+          // Api.get_actMntBkg() - Index 4
+          if (responses[4]?['success'] == true &&
+              responses[4]['data'].isNotEmpty) {
+            api_datafield_mntBkgAct = responses[4]['data'];
+            // total_bkg_month
+
+            if (api_datafield_mntBkgAct is String) {
+              list_mntBkgActual = jsonDecode(api_datafield_mntBkgAct);
+            } else if (api_datafield_mntBkgAct is List) {
+              list_mntBkgActual = api_datafield_mntBkgAct;
+            }
+          }
+
+          // Api().get_tgtMntBkg(), // Index 5
+          if (responses[5]?['success'] == true &&
+              responses[5]['data'].isNotEmpty) {
+            api_datafield_mntBkgTgt = responses[5]['data'];
+            // TARGET_BKG_MONTH
+
+            if (api_datafield_mntBkgTgt is String) {
+              list_mntBkgTarget = jsonDecode(api_datafield_mntBkgTgt);
+            } else if (api_datafield_mntBkgTgt is List) {
+              list_mntBkgTarget = api_datafield_mntBkgTgt;
+            }
+          }
+
+          //
+          //
+          // END set API to variable
+
+          // USE API list to set variable
+          // declare ack variable
+          if (list_ack.isNotEmpty) {
+            if (globalCurrentMonth == Api.currMonth &&
+                globalCurrentYear == Api.currYear) {
+              i_regAck = list_ack[0]['AMOUNT'] ?? 0;
+              // s_regAck = NumberFormat.decimalPattern().format(rawRegtarget);
             }
 
-            // calculate surplus/shortage
-            rawRegShortage = rawRegactual - rawRegtarget;
-            //rawRegShortage = 31398;
-            if (rawRegShortage > 0) {
-              regPctgText = 'Surplus';
-              regShortageColor = Colors.blue;
-              //regShortageColor = Colors.green;
-              regShortage =
-                  '+${NumberFormat.compact().format(rawRegShortage).toLowerCase()}';
-            } else if (rawRegShortage < 0) {
-              regPctgText = 'Shortage';
-              regShortageColor = Colors.pink;
-              regShortage =
-                  '${NumberFormat.compact().format(rawRegShortage).toLowerCase()}';
+            if (globalCurrentYear == Api.currYear) {
+              i_regAck_yearly = list_ack[0]['AMOUNT'] ?? 0;
+            }
+          }
+
+          // declare monthly actual reg variable
+          if (list_mntRegActual.isNotEmpty) {
+            i_regActual_mntly = list_mntRegActual[0]['total_reg_month'] ?? 0;
+            s_regActual_mntly = NumberFormat.decimalPattern().format(
+              i_regActual_mntly,
+            );
+            if (s_regActual_mntly == '0') {
+              s_regActual_mntly = '00,000';
+            }
+          }
+
+          // declare monthly target reg variable
+          if (list_mntRegTarget.isNotEmpty) {
+            i_regTarget_mntly = list_mntRegTarget[0]['target_reg_month'] ?? 0;
+            s_regTarget_mntly = NumberFormat.decimalPattern().format(
+              i_regTarget_mntly,
+            );
+            if (s_regTarget_mntly == '0') {
+              s_regTarget_mntly = '00,000';
+            }
+          }
+
+          // declare yearly actual reg variable
+          if (list_yearRegActual.isNotEmpty) {
+            i_regActual_yearly = list_yearRegActual[0]['total_reg_year'] ?? 0;
+            s_regActual_yearly = NumberFormat.decimalPattern().format(
+              i_regActual_yearly,
+            );
+          }
+
+          // declare yearly target reg variable
+          if (list_yearRegTarget.isNotEmpty) {
+            i_regTarget_yearly = list_yearRegTarget[0]['TARGET_REG_YEAR'] ?? 0;
+            s_regTarget_yearly = NumberFormat.decimalPattern().format(
+              i_regTarget_yearly,
+            );
+          }
+
+          // declare monthly actual booking variable
+          if (list_mntBkgActual.isNotEmpty) {
+            i_bkgActual_mntly = list_mntBkgActual[0]['total_bkg_month'] ?? 0;
+            s_bkgActual_mntly = NumberFormat.decimalPattern().format(
+              i_bkgActual_mntly,
+            );
+            if (s_bkgActual_mntly == '0') {
+              s_bkgActual_mntly = '00,000';
+            }
+          }
+
+          // declare monthly target booking variable
+          if (list_mntBkgTarget.isNotEmpty) {
+            i_bkgTarget_mntly = list_mntBkgTarget[0]['TARGET_BKG_MONTH'] ?? 0;
+            s_bkgTarget_mntly = NumberFormat.decimalPattern().format(
+              i_bkgTarget_mntly,
+            );
+            if (s_bkgTarget_mntly == '0') {
+              s_bkgTarget_mntly = '00,000';
+            }
+          }
+
+          // END PARAMETER BASED ON API LIST
+
+          //
+          //
+          //
+          //
+          //
+
+          //
+          // ADDITIONAL LOGIC & PARAMETER DECLARATION
+          // get total reg + ack (ack value is 0 if not on the current month)
+          i_regActual_mntly = i_regActual_mntly + i_regAck;
+          s_regActual_mntly = NumberFormat.decimalPattern().format(
+            i_regActual_mntly,
+          );
+          if (s_regActual_mntly == '0') {
+            s_regActual_mntly = '00,000';
+          }
+
+          i_regActual_yearly = i_regActual_yearly + i_regAck_yearly;
+          s_regActual_yearly = NumberFormat.decimalPattern().format(
+            i_regActual_yearly,
+          );
+
+          // monthly shortage & color
+          if (i_regTarget_mntly != 0) {
+            i_regShortage = i_regActual_mntly - i_regTarget_mntly;
+
+            if (i_regShortage > 0) {
+              s_regShortageText = 'Surplus';
+              c_regShortageColor = Colors.blue;
+              s_regShortage =
+                  '+${NumberFormat.compact().format(i_regShortage).toLowerCase()}';
+            } else if (i_regShortage < 0) {
+              s_regShortageText = 'Shortage';
+              c_regShortageColor = Colors.pink;
+              s_regShortage =
+                  '${NumberFormat.compact().format(i_regShortage).toLowerCase()}';
             } else {
-              regPctgText = 'Exact';
-              regShortageColor = Colors.blue;
-              regShortage = NumberFormat.compact()
-                  .format(rawRegShortage)
+              s_regShortageText = 'Exact';
+              c_regShortageColor = Colors.blue;
+              s_regShortage = NumberFormat.compact()
+                  .format(i_regShortage)
                   .toLowerCase();
             }
           }
-          // Registration monthly math logic END
+
+          // monthly percentage & color
+          if (i_regTarget_mntly != 0) {
+            i_regPctg_mntly = (i_regActual_mntly * 100) ~/ i_regTarget_mntly;
+            s_regPctg_mntly = i_regPctg_mntly.toStringAsFixed(1);
+
+            if (i_regPctg_mntly > 99) {
+              c_regColor = Colors.green;
+            } else if (i_regPctg_mntly > 70) {
+              c_regColor = Colors.blue;
+            } else if (i_regPctg_mntly > 50) {
+              c_regColor = Colors.yellow;
+            } else if (i_regPctg_mntly > 25) {
+              c_regColor = Colors.orange;
+            } else {
+              c_regColor = Colors.red;
+            }
+          }
+
+          // yearly remaining
+          i_regRemaining_yearly = i_regTarget_yearly - i_regActual_yearly;
+          s_regRemaining_yearly = NumberFormat.decimalPattern().format(
+            i_regRemaining_yearly,
+          );
+
+          // yearly percentage
+          if (i_regTarget_yearly != 0) {
+            d_regPctg_yearly = ((i_regActual_yearly * 100) / i_regTarget_yearly)
+                .toDouble();
+            s_regPctg_yearly = d_regPctg_yearly.toStringAsFixed(1);
+          }
+
+          if (i_bkgTarget_mntly != 0) {
+            i_bkgPctg_mntly = (i_bkgActual_mntly * 100) ~/ i_bkgTarget_mntly;
+
+            i_bkgShortage = i_bkgActual_mntly - i_bkgTarget_mntly;
+            if (i_bkgShortage > 0) {
+              s_bkgShortageText = 'Surplus';
+              c_bkgShortageColor = Colors.blue;
+              s_bkgShortage =
+                  '+${NumberFormat.compact().format(i_bkgShortage).toLowerCase()}';
+            } else if (i_bkgShortage < 0) {
+              s_bkgShortageText = 'Shortage';
+              c_bkgShortageColor = Colors.pink;
+              s_bkgShortage =
+                  '${NumberFormat.compact().format(i_bkgShortage).toLowerCase()}';
+            } else {
+              s_bkgShortageText = 'Exact';
+              c_bkgShortageColor = Colors.blue;
+              s_bkgShortage = NumberFormat.compact()
+                  .format(i_bkgShortage)
+                  .toLowerCase();
+            }
+
+            if (i_bkgPctg_mntly > 99) {
+              c_bkgColor = Colors.green;
+            } else if (i_bkgPctg_mntly > 70) {
+              c_bkgColor = Colors.blue;
+            } else if (i_bkgPctg_mntly > 50) {
+              c_bkgColor = Colors.yellow;
+            } else if (i_bkgPctg_mntly > 25) {
+              c_bkgColor = Colors.orange;
+            } else {
+              c_bkgColor = Colors.red;
+            }
+          }
+
+          // END ADDITIONAL LOGIC & PARAMETER DECLARATION
+
+          //
+          //
+          //
+          //
 
           // Registration yearly math logic START
           // Parse Registration Year Actual (Index 2)
-          if (responses[2]?['success'] == true &&
-              responses[2]['data'].isNotEmpty) {
-            var rawYearlyValue = responses[2]['data'][0]['total_reg_year'] ?? 0;
-            rawYearlyValue = rawYearlyValue + rawRegACK_forYear;
-            regActYearly = NumberFormat.decimalPattern().format(rawYearlyValue);
-            //regActYearly2 = NumberFormat.decimalPattern().format(3662);
-            if (regActYearly == '0') {
-              regActYearly = '00,000';
-            }
-          }
-
-          // Parse Registration Year Actual (Index 3)
-          if (responses[3]?['success'] == true &&
-              responses[3]['data'].isNotEmpty) {
-            regTgtYearly = NumberFormat.decimalPattern().format(
-              responses[3]['data'][0]['TARGET_REG_YEAR'] ?? 0,
-            );
-            if (regTgtYearly == '0') {
-              regTgtYearly = '00,000';
-            }
-
-            if (regActYearly != '00,000' && regTgtYearly != '00,000') {
-              rawRegActYearly = responses[2]['data'][0]['total_reg_year'] ?? 0;
-              rawRegActYearly = rawRegActYearly + rawRegACK_forYear;
-              rawRegTgtYearly = responses[3]['data'][0]['TARGET_REG_YEAR'] ?? 0;
-
-              // calculate percentage
-              rawRegPctgYearly = ((rawRegActYearly * 100) / rawRegTgtYearly)
-                  .toDouble();
-              regPctgYearly = rawRegPctgYearly.toStringAsFixed(1);
-
-              // calculate remaining
-              rawRegRemaining = rawRegTgtYearly - rawRegActYearly;
-              print('remaining: $rawRegRemaining');
-              regRemaining = NumberFormat.decimalPattern().format(
-                rawRegRemaining,
-              );
-            }
-          }
-          // Registration yearly math logic END
-
-          // Booking monthly math logic START
-          // Parse Booking Month Actual (Index 3)
-          if (responses[4]?['success'] == true &&
-              responses[4]['data'].isNotEmpty) {
-            bookMntActual = NumberFormat.decimalPattern().format(
-              responses[4]['data'][0]['total_bkg_month'] ?? 0,
-            );
-            // print(bookMntActual);
-            if (bookMntActual == '0') {
-              bookMntActual = '00,000';
-            }
-          }
-
-          // Parse Booking Month Target (Index 4)
-          if (responses[5]?['success'] == true &&
-              responses[5]['data'].isNotEmpty) {
-            bookMntTarget = NumberFormat.decimalPattern().format(
-              responses[5]['data'][0]['TARGET_BKG_MONTH'] ?? 1,
-            );
-            if (bookMntTarget == '0') {
-              bookMntTarget = '00,000';
-            }
-          }
-
-          if (bookMntActual != '00,000' && bookMntTarget != '00,000') {
-            //
-            rawBookactual = responses[4]['data'][0]['total_bkg_month'] ?? 0;
-            rawBooktarget = responses[5]['data'][0]['TARGET_BKG_MONTH'] ?? 0;
-
-            // calculate percentage
-            bookPcntge = (rawBookactual * 100) ~/ rawBooktarget;
-
-            if (bookPcntge > 99) {
-              book_color = Colors.green;
-            } else if (bookPcntge > 70) {
-              book_color = Colors.blue;
-            } else if (bookPcntge > 50) {
-              book_color = Colors.yellow;
-            } else if (bookPcntge > 25) {
-              book_color = Colors.orange;
-            } else {
-              book_color = Colors.red;
-            }
-
-            rawBookShortage = rawBookactual - rawBooktarget;
-            if (rawBookShortage > 0) {
-              bookPctgText = 'Surplus';
-              bookShortageColor = Colors.blue;
-              //bookShortageColor = Colors.green;
-              bookShortage =
-                  '+${NumberFormat.compact().format(rawBookShortage).toLowerCase()}';
-            } else if (rawBookShortage < 0) {
-              bookPctgText = 'Shortage';
-              bookShortageColor = Colors.pink;
-              bookShortage =
-                  '${NumberFormat.compact().format(rawBookShortage).toLowerCase()}';
-            } else {
-              bookPctgText = 'Exact';
-              bookShortageColor = Colors.blue;
-              bookShortage = NumberFormat.compact()
-                  .format(rawBookShortage)
-                  .toLowerCase();
-            }
-          }
-
-          // Booking monthly math logic END
 
           if (responses[7]?['success'] == true &&
               responses[7]['data'].isNotEmpty) {
@@ -656,56 +804,26 @@ class _HomePageState extends State<HomePage> {
                 ListTile(
                   leading: const Icon(Icons.access_time),
                   title: Text('${curr_month_Mmm} ' + Api.currYear),
-                  onTap: () => _selectMonthYear(context),
-                  /*onTap: () {
-                    // 1. Close the drawer first
-                    Navigator.pop(context);
-                    // 2. Add your custom function action here
-                    print("Home clicked");
-                  },*/
-                ),
-                /*ListTile(
-                  leading: const Icon(Icons.home),
-                  title: const Text('Home'),
-                  onTap: () {
-                    // 1. Close the drawer first
-                    Navigator.pop(context);
-                    // 2. Add your custom function action here
-                    print("Home clicked");
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.directions_car),
-                  title: const Text('Registration'),
-                  onTap: () {
-                    print("Registration module pressed");
-                    Navigator.pushNamed(
-                      context, // Uses the fresh localContext to trace routes safely
-                      '/detailpage2',
-                      arguments: {
-                        'title': 'Registration',
-                        'month': 'May',
-                        'year': '2026',
+                  // onTap: () => _selectMonthYear(context),  // Used filter_utils.dart
+                  onTap: () async {
+                    Navigator.pop(context); // Close drawer first
+
+                    await FilterUtils.selectMonthYear(
+                      context: context,
+                      onDateSelected: () {
+                        setState(() {
+                          curr_month_Mmm = DateFormat('MMM').format(
+                            DateTime(
+                              int.parse(Api.currYear),
+                              int.parse(Api.currMonth),
+                            ),
+                          );
+                        });
+                        _loadData();
                       },
                     );
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.person),
-                  title: const Text('Booking'),
-                  onTap: () {
-                    print("Booking module pressed");
-                    Navigator.pushNamed(
-                      context, // Uses the fresh localContext to trace routes safely
-                      '/bkgfunctionList',
-                      arguments: {
-                        'title': 'Booking',
-                        'month': 'May',
-                        'year': '2026',
-                      },
-                    );
-                  },
-                ),*/
               ],
             ),
           ),
@@ -835,7 +953,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         Text(
                                           // '82,198',
-                                          regActYearly,
+                                          s_regActual_yearly,
                                           style: TextStyle(
                                             fontSize: 38,
                                             fontWeight: FontWeight.bold,
@@ -854,7 +972,7 @@ class _HomePageState extends State<HomePage> {
                                           width: 80,
                                           height: 80,
                                           child: CircularProgressIndicator(
-                                            value: rawRegPctgYearly / 100,
+                                            value: d_regPctg_yearly / 100,
                                             strokeWidth: 8,
                                             backgroundColor: Colors.grey[200],
                                             valueColor:
@@ -867,7 +985,7 @@ class _HomePageState extends State<HomePage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                              '$regPctgYearly%',
+                                              '$s_regPctg_yearly%',
                                               style: TextStyle(
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.bold,
@@ -876,7 +994,7 @@ class _HomePageState extends State<HomePage> {
                                               ),
                                             ),
                                             Text(
-                                              'of $regTgtYearly',
+                                              'of $s_regTarget_yearly',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 // color: Colors.grey,
@@ -893,60 +1011,8 @@ class _HomePageState extends State<HomePage> {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    /*Expanded(
-                                      child: Text(
-                                        // '82,198',
-                                        regActYearly,
-                                        style: TextStyle(
-                                          fontSize: 42,
-                                          fontWeight: FontWeight.bold,
-                                          // color: Colors.black,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),*/
+                                    //
                                     const SizedBox(width: 16),
-                                    // Circular Progress
-                                    /*Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        SizedBox(
-                                          width: 90,
-                                          height: 90,
-                                          child: CircularProgressIndicator(
-                                            value: 0.9657,
-                                            strokeWidth: 8,
-                                            backgroundColor: Colors.grey[200],
-                                            valueColor:
-                                                const AlwaysStoppedAnimation<Color>(
-                                                  Colors.green,
-                                                ),
-                                          ),
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Text(
-                                              '96.6%',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                // color: Colors.green,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            Text(
-                                              'of $regTgtYearly',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                // color: Colors.grey,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),*/
                                   ],
                                 ),
                                 //const SizedBox(height: 12),
@@ -960,7 +1026,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '$regPctgYearly% of target achieved',
+                                      '$s_regPctg_yearly% of target achieved',
                                       style: TextStyle(
                                         // color: Colors.green,
                                         color: Colors.white,
@@ -974,7 +1040,7 @@ class _HomePageState extends State<HomePage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: LinearProgressIndicator(
-                                    value: rawRegPctgYearly / 100,
+                                    value: d_regPctg_yearly / 100,
                                     minHeight: 8,
                                     backgroundColor: Colors.grey[200],
                                     valueColor:
@@ -987,11 +1053,14 @@ class _HomePageState extends State<HomePage> {
                                 Row(
                                   children: [
                                     //_buildTargetInfo('TARGET', '360,000'),
-                                    _buildTargetInfo('TARGET', regTgtYearly),
+                                    _buildTargetInfo(
+                                      'TARGET',
+                                      s_regTarget_yearly,
+                                    ),
                                     const Spacer(),
                                     _buildTargetInfo(
                                       'REMAINING',
-                                      regRemaining,
+                                      s_regRemaining_yearly,
                                       alignRight: true,
                                     ),
                                     /*_buildTargetInfo(
@@ -1019,14 +1088,15 @@ class _HomePageState extends State<HomePage> {
                                 title: 'Registration',
                                 //current: '7,076',
                                 //target: '34,000',
-                                current: regMntActual,
-                                target: regMntTarget,
-                                percentage: regPcntge,
+                                current: s_regActual_mntly,
+                                target: s_regTarget_mntly,
+                                percentage: i_regPctg_mntly,
                                 //percentageColor: Colors.blue,
-                                percentageColor: reg_color,
-                                percentageText: regPctgText,
-                                change: regShortage,
-                                changeColor: regShortageColor,
+                                percentageColor: c_regColor,
+                                // percentageText: s_regPctg_mntly,
+                                percentageText: s_regShortageText,
+                                change: s_regShortage,
+                                changeColor: c_regShortageColor,
                                 onTap: () {
                                   print("Registration module pressed");
                                   if (aclRegistration == 'Y') {
@@ -1036,8 +1106,8 @@ class _HomePageState extends State<HomePage> {
                                       '/detailpage2',
                                       arguments: {
                                         'title': 'Registration',
-                                        'month': 'May',
-                                        'year': '2026',
+                                        'month': 'Jan',
+                                        'year': '1999',
                                       },
                                     );
                                   } else {
@@ -1050,14 +1120,14 @@ class _HomePageState extends State<HomePage> {
                               _buildMetricCard(
                                 icon: Icons.person,
                                 title: 'Booking',
-                                current: bookMntActual,
-                                target: bookMntTarget,
-                                percentage: bookPcntge,
-                                percentageColor: book_color,
-                                percentageText: bookPctgText,
+                                current: s_bkgActual_mntly,
+                                target: s_bkgTarget_mntly,
+                                percentage: i_bkgPctg_mntly,
+                                percentageColor: c_bkgColor,
+                                percentageText: s_bkgShortageText,
                                 // change: '+0.0k',
-                                change: bookShortage,
-                                changeColor: bookShortageColor,
+                                change: s_bkgShortage,
+                                changeColor: c_bkgShortageColor,
                                 onTap: () {
                                   print("Booking module pressed");
                                   if (aclBooking == 'Y') {
@@ -1212,8 +1282,6 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    // color: Colors.grey[100],
-                    // color: Colors.tealAccent[100],
                     color: (title == 'Registration' || title == 'Booking')
                         ? Colors.tealAccent[100]
                         : Colors.grey[200],
@@ -1230,12 +1298,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            //const SizedBox(height: 12),
-            /*Text(
-              title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),*/
             const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -1250,12 +1312,10 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const Text(
                   ' / ',
-                  // style: TextStyle(fontSize: 16, color: Colors.grey),
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 Text(
                   target,
-                  // style: const TextStyle(fontSize: 16, color: Colors.grey),
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
@@ -1327,24 +1387,6 @@ class _HomePageState extends State<HomePage> {
                   ),
               ],
             ),
-            /*const SizedBox(height: 15),
-            // Change indicator
-            if (change.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: changeColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  change,
-                  style: TextStyle(
-                    color: changeColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),*/
           ],
         ),
       ),
